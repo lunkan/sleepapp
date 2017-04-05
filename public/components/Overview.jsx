@@ -4,8 +4,12 @@ import Chart from 'chart.js';
 import SleepChart from '../charts/sleep.js';
 import Moment from 'moment';
 
+import {Toolbar, ToolbarGroup, ToolbarTitle} from 'material-ui/Toolbar';
+
 const MIN_PER_DAY = 1440;
 const MS_PER_DAY = 86400000;
+
+SleepChart(Chart);
 
 class Overview extends Component {
 
@@ -16,14 +20,21 @@ class Overview extends Component {
       	graphData: null,
       	timeSpan: null
       }
+
+      this.drawGraph = this.drawGraph.bind(this);
    }
 
-	//componentDidMount() {
+	componentDidMount() {
+		this.drawGraph();
+	}
+
 	componentDidUpdate() {
+		this.drawGraph();
+	}
+
+	drawGraph() {
 		const { graphData, timeSpan } = this.props;
 		var ctx = document.getElementById("myChart");
-
-		SleepChart(Chart);
 
 		var options = {
 		    maintainAspectRatio: false,
@@ -85,11 +96,16 @@ class Overview extends Component {
 	}
 
 	render() {
-		//const { graphData } = this.props;
-
 		return (
-			<div style={{margin:20,height:'70vh'}}>
-				<canvas id="myChart" width="100%" height="100%"></canvas>
+			<div>
+				<Toolbar>
+					<ToolbarGroup>
+          				<ToolbarTitle text="Graph" />
+          			</ToolbarGroup>
+				</Toolbar>
+				<div style={{margin:20,height:'70vh'}}>
+					<canvas id="myChart" width="100%" height="100%"></canvas>
+				</div>
 			</div>
 			)
 	}

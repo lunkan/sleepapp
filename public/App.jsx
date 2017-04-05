@@ -79,7 +79,7 @@ class App extends React.Component {
 		            icon={<IconTimeline />}
 		            onTouchTap={() => this.selectRoute(1)} />
 		          <BottomNavigationItem
-		            label="List"
+		            label="Log"
 		            icon={<IconViewList />}
 		            onTouchTap={() => this.selectRoute(2)} />
 		        </BottomNavigation>  

@@ -8,7 +8,8 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider'
 import RaisedButton from 'material-ui/RaisedButton'
 import DatePicker from 'material-ui/DatePicker'
 import TimePicker from 'material-ui/TimePicker'
-   
+import Toggle from 'material-ui/Toggle';
+
 class AddSleepEvent extends Component {
 
    constructor() {
