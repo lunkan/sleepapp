@@ -1,9 +1,5 @@
 import { combineReducers } from 'redux'
-import { RECEIVE_SLEEP_EVENT, ADD_SLEEP_EVENT, UPDATE_SLEEP_EVENT, DELETE_SLEEP_EVENT } from '../actions/actions'
-
-function sortEvents(a, b) {
-   return a.data.startTime.diff(b.data.startTime);
-}
+import { RECEIVE_SLEEP_EVENT, INIT_SLEEP_FORM, PUT_SLEEP_FORM } from '../actions/actions';
 
 function sleepEvents(state = [], action) {
    switch (action.type) {
@@ -15,8 +11,22 @@ function sleepEvents(state = [], action) {
    }
 }
 
+function sleepForm(state = {}, action) {
+   switch (action.type) {
+      case INIT_SLEEP_FORM:
+         return action.data;
+
+      case PUT_SLEEP_FORM:
+         return Object.assign(state, action.data);
+
+      default:
+         return state
+   }
+}
+
 const sleepApp = combineReducers({
-   sleepEvents
+   sleepEvents,
+   sleepForm
 })
 
 export default sleepApp

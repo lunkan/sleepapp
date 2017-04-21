@@ -1,0 +1,6 @@
+.icon-dawn {
+	margin-top: 6px !important;
+}
+.icon-dawn path {
+	transform: translateY(10px);
+}

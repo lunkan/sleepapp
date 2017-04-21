@@ -1,49 +1,9 @@
 import Moment from 'moment'
 
 export const RECEIVE_SLEEP_EVENT = 'RECEIVE_SLEEP_EVENT';
-export const ADD_SLEEP_EVENT = 'ADD_SLEEP_EVENT';
-export const UPDATE_SLEEP_EVENT = 'UPDATE_SLEEP_EVENT';
-export const DELETE_SLEEP_EVENT = 'DELETE_SLEEP_EVENT';
-export const ADD_POOP_EVENT = 'ADD_POOP_EVENT';
-
-const MILLISEC_HOUR = 1000 * 60 * 60;
-const MILLISEC_MINUTE = 1000 * 60;
-
-let nextSleepEventId = 0;
-
-function isNightSleep(data) {
-	return parseInt(data.startTime.format('H')) < 8 || parseInt(data.startTime.format('H')) > 18; 
-}
-
-function formatTimeDifference(momentA, momentB) {
-	let difference = momentB.diff(momentA);
-	let hours = Math.floor(difference / MILLISEC_HOUR);
-	let minutes = Math.floor((difference - hours * MILLISEC_HOUR) / MILLISEC_MINUTE);
-
-	if(hours > 0) {
-		return hours + 'h ' + minutes + 'm';
-	} else {
-		return minutes + 'm';
-	}
-}
-
-function formatDuration(data) {
-	return {
-		sleep: data.endTime.diff(data.sleepTime) / 60000,
-		preSleep: data.sleepTime.diff(data.startTime) / 60000,
-	}
-}
-
-function formatData(data) {
-	return {
-		date: data.startTime.format('dddd, MMMM Do'),
-		sleepTime: data.sleepTime.format('HH:mm'),
-		sleepDuration: formatTimeDifference(data.sleepTime, data.endTime),
-		preSleepTime: data.startTime.format('HH:mm'),
-		preSleepDuration: formatTimeDifference(data.startTime, data.sleepTime)
-	}
-}
-
+export const PUT_SLEEP_FORM = 'PUT_SLEEP_FORM';
+export const INIT_SLEEP_FORM = 'INIT_SLEEP_FORM';
+export const SAVE_SLEEP_FORM = 'SAVE_SLEEP_FORM';
 
 export function receiveEvents(json) {
 	return {
@@ -53,14 +13,7 @@ export function receiveEvents(json) {
 			startTime: Moment(event.startTime),
 			sleepTime: Moment(event.sleepTime),
 			endTime: Moment(event.endTime)
-		})).map(event => ({
-			id: event.id,
-			data: event,
-			duration: formatDuration(event),
-			formattedData: formatData(event),
-			isNightSleep: isNightSleep(event)
-		})),
-		receivedAt: Date.now()
+		}))
 	}
 }
 
@@ -73,7 +26,6 @@ export function fetchSleepEvents() {
 }
 
 export function addSleepEvent(data) {
-	console.log('addSleepEvent', data);
 	return function (dispatch) {
 
 		var newSleepEvent = {
@@ -122,5 +74,53 @@ export function deleteSleepEvent(id) {
 			},
 			method: "Delete"
 		}).then(resp => dispatch(fetchSleepEvents()))
+	}
+}
+
+//Initilize sleep form from existing event or new/empty
+export function initSleepForm(eventData) {
+	const {startTime, sleepTime, endTime, id} = eventData || {};
+
+	return {
+		type: INIT_SLEEP_FORM,
+		data: {
+			date: sleepTime ? sleepTime.toDate() : new Date(),
+			sleepTime: sleepTime ? sleepTime.toDate() : null,
+			endTime: endTime ? endTime.toDate() : null,
+			preSleepDuration: startTime && sleepTime ? Math.round(sleepTime.diff(startTime)/60000) : 0,
+		}
+	}
+}
+
+export function putSleepForm(formData) {
+	return {
+		type: PUT_SLEEP_FORM,
+		data: data
+	}
+}
+
+export function saveSleepForm(formData) {
+	const { id, date, sleepTime, endTime, preSleepDuration } = formData;
+
+	let baseMoment = Moment(date).startOf('day');
+    let sleepMoment = baseMoment.clone().hour(sleepTime.getHours()).minute(sleepTime.getMinutes());
+    let endMoment = baseMoment.clone().hour(endTime.getHours()).minute(endTime.getMinutes());
+    let startMoment = sleepMoment.clone().substract(parseInt(preSleepDuration || 0) * 60000, 'm');
+
+    //End time may fall into next day (if less hours than sleep)
+    if(sleepTime.getHours() > endTime.getHours()) {
+        endMoment.add(1, 'd');
+    }
+
+	let parsedData = {
+        startTime: startMoment,
+        sleepTime: sleepMoment,
+        endTime: endMoment
+    }
+
+	if(id) {
+		return updateSleepEvent(id, parsedData);
+	} else {
+		return addSleepEvent(parsedData);
 	}
 }

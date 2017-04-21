@@ -4,7 +4,7 @@ import Chart from 'chart.js';
 import SleepChart from '../charts/sleep.js';
 import Moment from 'moment';
 
-import {Toolbar, ToolbarGroup, ToolbarTitle} from 'material-ui/Toolbar';
+import PageHeader from './PageHeader.jsx';
 
 const MIN_PER_DAY = 1440;
 const MS_PER_DAY = 86400000;
@@ -98,11 +98,7 @@ class Overview extends Component {
 	render() {
 		return (
 			<div>
-				<Toolbar>
-					<ToolbarGroup>
-          				<ToolbarTitle text="Graph" />
-          			</ToolbarGroup>
-				</Toolbar>
+				<PageHeader pageTitle="Graph"/>
 				<div style={{margin:20,height:'70vh'}}>
 					<canvas id="myChart" width="100%" height="100%"></canvas>
 				</div>
@@ -127,46 +123,45 @@ function select(state) {
 
 	if(Array.isArray(state.sleepEvents) & state.sleepEvents.length) {
 
-		firstDate = state.sleepEvents[0].data.startTime.clone().subtract(1, 'd').startOf('day');
-		lastDate = state.sleepEvents[state.sleepEvents.length-1].data.endTime.clone().add(1, 'd').startOf('day');
+		firstDate = state.sleepEvents[0].startTime.clone().subtract(1, 'd').startOf('day');
+		lastDate = state.sleepEvents[state.sleepEvents.length-1].endTime.clone().add(1, 'd').startOf('day');
 
 		state.sleepEvents.forEach(e => {
-			var data = e.data;
-			var nStart = normalizeTime(data.startTime);
-			var nSleep = normalizeTime(data.sleepTime);
-			var nEnd = normalizeTime(data.endTime);
+			var nStart = normalizeTime(e.startTime);
+			var nSleep = normalizeTime(e.sleepTime);
+			var nEnd = normalizeTime(e.endTime);
 
-			if(data.startTime.date() !== data.sleepTime.date()) {
+			if(e.startTime.date() !== e.sleepTime.date()) {
 				normalizedPreSleepEvents.splice(-1, 0, {
-					x: normalizeDay(data.startTime, firstDate, lastDate),
+					x: normalizeDay(e.startTime, firstDate, lastDate),
 					y: nStart,
 					r: 0 - nStart
 				}, {
-					x: normalizeDay(data.sleepTime, firstDate, lastDate),
+					x: normalizeDay(e.sleepTime, firstDate, lastDate),
 					y: MIN_PER_DAY,
 					r: nSleep - MIN_PER_DAY,
 				});
 			} else {
 				normalizedPreSleepEvents.push({
-					x: normalizeDay(data.startTime, firstDate, lastDate),
+					x: normalizeDay(e.startTime, firstDate, lastDate),
 					y: nStart,
 					r: nSleep - nStart,
 				})
 			}
 
-			if(data.sleepTime.date() !== data.endTime.date()) {
+			if(e.sleepTime.date() !== e.endTime.date()) {
 				normalizedSleepEvents.splice(-1, 0, {
-					x: normalizeDay(data.sleepTime, firstDate, lastDate),
+					x: normalizeDay(e.sleepTime, firstDate, lastDate),
 					y: nSleep,
 					r: 0 - nSleep,
 				}, {
-					x: normalizeDay(data.endTime, firstDate, lastDate),
+					x: normalizeDay(e.endTime, firstDate, lastDate),
 					y: MIN_PER_DAY,
 					r: nEnd - MIN_PER_DAY,
 				});
 			} else {
 				normalizedSleepEvents.push({
-					x: normalizeDay(data.sleepTime, firstDate, lastDate),
+					x: normalizeDay(e.sleepTime, firstDate, lastDate),
 					y: nSleep,
 					r: nEnd - nSleep,
 				})

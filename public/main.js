@@ -34,59 +34,14 @@ injectTapEventPlugin();
 const store = createStore(
   rootReducer,
   applyMiddleware(
-    thunkMiddleware // lets us dispatch() functions
+    thunkMiddleware
   )
 )
 
-const history = createBrowserHistory()
+const history = createBrowserHistory();
 
 var currentMoment = Moment();
 var startTime, sleepTime, endTime;
-
-/*for(let i = 0; i < 10; i++) {
-
-	for(let j = 0; j < 3; j++) {
-
-		currentMoment.startOf('day');
-
-		switch(j) {
-			case 0:
-				currentMoment.add(Math.round(Math.random()*120) + 1200, 'minutes');
-				startTime = Moment(currentMoment.toDate());
-				sleepTime = Moment(currentMoment.toDate());
-				endTime = Moment(currentMoment.toDate());
-				sleepTime.add(Math.round(Math.random()*20), 'minutes');
-				endTime.add(Math.round(Math.random()*120) + 480 , 'minutes');
-				break;
-			case 1:
-				currentMoment.add(Math.round(Math.random()*120) + 860, 'minutes');
-				startTime = Moment(currentMoment.toDate());
-				sleepTime = Moment(currentMoment.toDate());
-				endTime = Moment(currentMoment.toDate());
-				sleepTime.add(Math.round(Math.random()*20), 'minutes');
-				endTime.add(Math.round(Math.random()*60) + 60 , 'minutes');
-				break;
-			case 2:
-				currentMoment.add(Math.round(Math.random()*120) + 600, 'minutes');
-				startTime = Moment(currentMoment.toDate());
-				sleepTime = Moment(currentMoment.toDate());
-				endTime = Moment(currentMoment.toDate());
-				sleepTime.add(Math.round(Math.random()*20), 'minutes');
-				endTime.add(Math.round(Math.random()*60) + 60 , 'minutes');
-				break;
-		}
-
-	   store.dispatch(addSleepEvent({
-	     startTime: startTime,
-	     sleepTime: sleepTime,
-	     endTime: endTime,
-	  }));
-
-	   //currentMoment.add(Math.round(Math.random()*3+3), 'hours'); 
-	}
-
-	currentMoment.add(1, 'days');  
-}*/
 
 ReactDOM.render((
    <Provider store = {store}>
