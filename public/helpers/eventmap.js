@@ -80,7 +80,7 @@ export default class EventMap {
 			}
 		});
 
-		return "Slept " + this.formatDuration(sumSleep); 
+		return sumSleep;//"Slept " + this.formatDuration(sumSleep); 
 	}
 
 	sumDetails(dateMoment, events) {
@@ -109,11 +109,19 @@ export default class EventMap {
 	}
 
 	daySort(a, b) {
-  		return b.label.localeCompare(a.label);
+  		return b.key - a.key;
   	}
 
   	eventSort(a, b) {
   		return b.startTime.diff(a.startTime);
+  	}
+
+  	sumDays() {
+  		return [...this.dayMap].map(([dayMoment, events]) => ({
+				key: dayMoment.unix(),
+				moment: dayMoment,
+	  			sleepDuration: this.sumDaySleep(dayMoment, events),
+	  		}));
   	}
 
   	toNestedArray() {
@@ -124,7 +132,7 @@ export default class EventMap {
 	  			isWeekend: parseInt(dayMoment.format('d')) >= 5,
 	  			week: 'Week ' + dayMoment.format('W') + ' ' + dayMoment.format('MMM YYYY'),
 	  			weekLabel: dayMoment.format('ddd'),  
-	  			summary: this.sumDaySleep(dayMoment, events),
+	  			summary: "Slept " + this.formatDuration(this.sumDaySleep(dayMoment, events)),
 	  			details: this.sumDetails(dayMoment, events), 
 	  			data: events.map(event => {
 	  				return Object.assign({

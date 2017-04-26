@@ -6,6 +6,8 @@ import Moment from 'moment';
 
 import PageHeader from './PageHeader.jsx';
 
+import EventMap from '../helpers/eventmap.js';
+
 const MIN_PER_DAY = 1440;
 const MS_PER_DAY = 86400000;
 
@@ -40,6 +42,7 @@ class Overview extends Component {
 		    maintainAspectRatio: false,
 	        scales: {
 	            xAxes: [{
+	            	id: 'momentScaleX',
 	            	type: 'time',
 	            	time: {
 	            		unit: 'day',
@@ -51,6 +54,17 @@ class Overview extends Component {
 	            	}
 	            }],
 	            yAxes: [{
+	            	id: 'linearScaleY',
+	                ticks: {
+	                	beginAtZero: true,
+	                    max: 1440,
+	                    stepSize: 120,
+	        			callback: function format(value) {
+	        				return value/60 + 'h';
+	        			}
+	                }
+	            }, {
+	            	id: 'momentScaleY',
                 	ticks: {
 	        			beginAtZero: true,
 	        			max: 1440,
@@ -66,7 +80,10 @@ class Overview extends Component {
 
 		var data = {
 		    datasets: [{
+            	type: 'sleep',
 	           	label: "Pre-sleep",
+	           	xAxisID: 'momentScaleX',
+	           	yAxisID: 'momentScaleY',
 	            backgroundColor: [
 	                'rgba(255, 99, 132, 0.2)'
 	            ],
@@ -76,7 +93,10 @@ class Overview extends Component {
 	            borderWidth: 1,
 	            data: graphData.preSleep,
 	        }, {
+	        	type: 'sleep',
 	           	label: "Sleep",
+	           	xAxisID: 'momentScaleX',
+	           	yAxisID: 'momentScaleY',
 	            backgroundColor: [
 	                'rgba(54, 162, 235, 0.2)'
 	            ],
@@ -85,11 +105,45 @@ class Overview extends Component {
 	            ],
 	            borderWidth: 1,
 	            data: graphData.sleep,
-	        }]
+	        }, {
+                type: 'line',
+                label: 'Daysleep',
+                xAxisID: 'momentScaleX',
+	           	yAxisID: 'linearScaleY',
+	           	fill: true,
+	           	spanGaps: false,
+	           	pointRadius: 1,
+	           	pointHitRadius: 10,
+            	lineTension: 0.1,
+                backgroundColor: [
+	                'rgba(150,150,150,0.1)'
+	            ],
+                borderColor: [
+	                'rgba(150,150,150,0.2)'
+	            ],
+	            borderWidth: 1,
+                data: graphData.sleepSum,
+            }, {
+                type: 'line',
+                label: 'Daysleep trend',
+                xAxisID: 'momentScaleX',
+	           	yAxisID: 'linearScaleY',
+	           	fill: false,
+	           	pointRadius: 1,
+	           	pointHitRadius: 10,
+            	lineTension: 0.1,
+            	backgroundColor: [
+	                'rgba(150,150,150,0)'
+	            ],
+                borderColor: [
+	                'rgba(0,0,0,1)'
+	            ],
+	            borderWidth: 1,
+                data: graphData.sleepSumTrend,
+            }]
 		};
 
 		var myBarChart = new Chart(ctx, {
-		    type: 'sleep',
 		    data: data,
 		    options: options
 		});
@@ -117,12 +171,37 @@ function normalizeDay(moment, firstMoment, lastMoment) {
 }
 
 function select(state) {
+	var eventMap = new EventMap(state.sleepEvents);
+
 	var normalizedPreSleepEvents = [];
 	var normalizedSleepEvents = [];
+	var sleepSumEvents = [];
+	var sleepSumTrendEvents = [];
 	var firstDate, lastDate;
 
-	if(Array.isArray(state.sleepEvents) & state.sleepEvents.length) {
+	eventMap.sumDays().forEach(day => {
+		var durationMinutes = day.sleepDuration / 60000;
 
+		if(durationMinutes >= 600) {
+			sleepSumEvents.push({
+				x: day.moment,
+				y: durationMinutes
+			});
+		}	
+	});
+
+	var trend = sleepSumEvents[0] ? sleepSumEvents[0].y : 0;
+
+	sleepSumEvents.forEach(daysleep => {
+		trend = trend*0.9 + daysleep.y*0.1;
+		sleepSumTrendEvents.push({
+			x: daysleep.x,
+			y: trend
+		});
+	});
+
+
+	if(Array.isArray(state.sleepEvents) && state.sleepEvents.length) {
 		firstDate = state.sleepEvents[0].startTime.clone().subtract(1, 'd').startOf('day');
 		lastDate = state.sleepEvents[state.sleepEvents.length-1].endTime.clone().add(1, 'd').startOf('day');
 
@@ -172,7 +251,9 @@ function select(state) {
    return {
       graphData: {
       	preSleep: normalizedPreSleepEvents,
-      	sleep: normalizedSleepEvents
+      	sleep: normalizedSleepEvents,
+      	sleepSum: sleepSumEvents,
+      	sleepSumTrend: sleepSumTrendEvents, 
 	  },
       timeSpan: {
       	fromDate: firstDate,
