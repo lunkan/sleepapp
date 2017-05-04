@@ -1,5 +1,21 @@
 import { combineReducers } from 'redux'
-import { RECEIVE_SLEEP_EVENT, INIT_SLEEP_FORM, PUT_SLEEP_FORM } from '../actions/actions';
+import { SET_CONFIG, RECEIVE_SLEEP_EVENT, INIT_SLEEP_FORM, PUT_SLEEP_FORM } from '../actions/actions';
+
+var defaultConfig = {
+   eventFilter: {
+      type: 'all'
+   }
+}
+
+function config(state = defaultConfig, action) {
+   switch (action.type) {
+      case SET_CONFIG:
+         var nextState = Object.assign({}, state);
+         return Object.assign(nextState, action.data);
+      default:
+         return state
+   }
+}
 
 function sleepEvents(state = [], action) {
    switch (action.type) {
@@ -17,7 +33,8 @@ function sleepForm(state = {}, action) {
          return action.data;
 
       case PUT_SLEEP_FORM:
-         return Object.assign(state, action.data);
+         var nextState = Object.assign({}, state);
+         return Object.assign(nextState, action.data);
 
       default:
          return state
@@ -26,7 +43,8 @@ function sleepForm(state = {}, action) {
 
 const sleepApp = combineReducers({
    sleepEvents,
-   sleepForm
+   sleepForm,
+   config
 })
 
 export default sleepApp

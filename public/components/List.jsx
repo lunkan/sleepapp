@@ -132,7 +132,14 @@ class EventLog extends Component {
 }
 
 function select(state) {
-	var eventMap = new EventMap(state.sleepEvents);
+	var { from, to } = state.config.eventFilter;
+	var events = state.sleepEvents;
+
+	if(from && to){
+		events = events.filter(e => e.startTime.diff(from) > 0);
+	}
+
+	var eventMap = new EventMap(events);
 
 	return {
 		eventMap: eventMap.toNestedArray()

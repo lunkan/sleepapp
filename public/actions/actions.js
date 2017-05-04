@@ -1,7 +1,40 @@
 import Moment from 'moment'
 
+export const SET_CONFIG = 'SET_CONFIG';
 export const RECEIVE_SLEEP_EVENT = 'RECEIVE_SLEEP_EVENT';
 export const SAVE_SLEEP_FORM = 'SAVE_SLEEP_FORM';
+
+export function setFilter(type) {
+
+	var filter = {
+		type: type
+	};
+
+	switch(type) {
+		case 'week':
+			filter.to = Moment();
+			filter.from = filter.to.clone().subtract(1, 'week');
+			break;
+		case 'month':
+			filter.to = Moment();
+			filter.from = filter.to.clone().subtract(1, 'month');
+			break;
+		case 'year':
+			filter.to = Moment();
+			filter.from = filter.to.clone().subtract(1, 'year');
+		default:
+			filter.from = null;
+			filter.to = null;
+			break;
+
+	}
+	return {
+		type: SET_CONFIG,
+		data: {
+			eventFilter: filter
+		}
+	}
+}
 
 export function receiveEvents(json) {
 	return {

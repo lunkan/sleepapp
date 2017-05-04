@@ -13,6 +13,9 @@ const MS_PER_DAY = 86400000;
 
 SleepChart(Chart);
 
+var myBarChart;
+var chartId = 0;
+
 class Overview extends Component {
 
 	constructor() {
@@ -30,34 +33,64 @@ class Overview extends Component {
 		this.drawGraph();
 	}
 
+	componentWillUpdate() {
+		if(myBarChart) {
+			myBarChart.destroy();
+		}
+
+		while (this.graphContainer.firstChild) {
+    		this.graphContainer.removeChild(this.graphContainer.firstChild);
+		}
+	}
+
 	componentDidUpdate() {
 		this.drawGraph();
 	}
 
 	drawGraph() {
 		const { graphData, timeSpan } = this.props;
-		var ctx = document.getElementById("myChart");
+
+		chartId++;
+
+		var ctx = document.createElement('canvas');
+		ctx.id = `SleepGraph_${chartId}`;
+		ctx.setAttribute('width', '100%');
+		ctx.setAttribute('height', '100%');
+
+		this.graphContainer.appendChild(ctx);
+
+		//var ctx = document.getElementById("myChart");
 
 		var options = {
 		    maintainAspectRatio: false,
+		    tooltips: {
+		    	callbacks: {
+		    		title: function(items, data) {
+		    			return items[0].xLabel.format('MMM DD YYYY');
+		    		},
+		    		label: function(item, data) {
+		    			var hours = Math.floor(item.yLabel / 60);
+		    			var minutes = Math.floor(item.yLabel - (hours * 60));
+		    			return `${hours}h ${minutes}m`;
+		    		}
+		    	}
+		    },
 	        scales: {
 	            xAxes: [{
 	            	id: 'momentScaleX',
 	            	type: 'time',
 	            	time: {
-	            		unit: 'day',
 	            		min: timeSpan.fromDate,
 	        			max: timeSpan.toDate,
-	        			displayFormats: {
-	                        day: 'MMM D'
-	                    }
+	        			round: 'day',
+	        			minUnit: 'day'
 	            	}
 	            }],
 	            yAxes: [{
 	            	id: 'linearScaleY',
 	                ticks: {
 	                	beginAtZero: true,
-	                    max: 1440,
+	                    max: 1440, 
 	                    stepSize: 120,
 	        			callback: function format(value) {
 	        				return value/60 + 'h';
@@ -143,7 +176,7 @@ class Overview extends Component {
             }]
 		};
 
-		var myBarChart = new Chart(ctx, {
+		myBarChart = new Chart(ctx, {
 		    data: data,
 		    options: options
 		});
@@ -153,9 +186,7 @@ class Overview extends Component {
 		return (
 			<div>
 				<PageHeader pageTitle="Graph"/>
-				<div style={{margin:20,height:'70vh'}}>
-					<canvas id="myChart" width="100%" height="100%"></canvas>
-				</div>
+				<div ref={(container) => { this.graphContainer = container; }} style={{margin:20,height:'70vh'}}></div>
 			</div>
 			)
 	}
@@ -166,12 +197,11 @@ function normalizeTime(moment) {
 	return 1 - (minutes / MIN_PER_DAY);
 }
 
-function normalizeDay(moment, firstMoment, lastMoment) {
-	return (moment.clone().startOf('day').unix() - firstMoment.unix()) / (lastMoment.unix() - firstMoment.unix());
-}
-
 function select(state) {
-	var eventMap = new EventMap(state.sleepEvents);
+	var { from, to } = state.config.eventFilter;
+
+	var filteredEvents = state.sleepEvents.filter(e => e.startTime.diff(from || Moment(0)) > 0);
+	var eventMap = new EventMap(filteredEvents);
 
 	var normalizedPreSleepEvents = [];
 	var normalizedSleepEvents = [];
@@ -201,28 +231,28 @@ function select(state) {
 	});
 
 
-	if(Array.isArray(state.sleepEvents) && state.sleepEvents.length) {
-		firstDate = state.sleepEvents[0].startTime.clone().subtract(1, 'd').startOf('day');
-		lastDate = state.sleepEvents[state.sleepEvents.length-1].endTime.clone().add(1, 'd').startOf('day');
+	if(Array.isArray(filteredEvents) && filteredEvents.length) {
+		firstDate = filteredEvents[0].startTime.clone().subtract(1, 'd').startOf('day');
+		lastDate = filteredEvents[filteredEvents.length-1].endTime.clone().add(1, 'd').startOf('day');
 
-		state.sleepEvents.forEach(e => {
+		filteredEvents.forEach(e => {
 			var nStart = normalizeTime(e.startTime);
 			var nSleep = normalizeTime(e.sleepTime);
 			var nEnd = normalizeTime(e.endTime);
 
 			if(e.startTime.date() !== e.sleepTime.date()) {
 				normalizedPreSleepEvents.splice(-1, 0, {
-					x: normalizeDay(e.startTime, firstDate, lastDate),
+					x: e.startTime.clone(),
 					y: nStart,
 					r: 0 - nStart
 				}, {
-					x: normalizeDay(e.sleepTime, firstDate, lastDate),
+					x: e.sleepTime.clone,
 					y: MIN_PER_DAY,
 					r: nSleep - MIN_PER_DAY,
 				});
 			} else {
 				normalizedPreSleepEvents.push({
-					x: normalizeDay(e.startTime, firstDate, lastDate),
+					x: e.startTime.clone(),
 					y: nStart,
 					r: nSleep - nStart,
 				})
@@ -230,17 +260,17 @@ function select(state) {
 
 			if(e.sleepTime.date() !== e.endTime.date()) {
 				normalizedSleepEvents.splice(-1, 0, {
-					x: normalizeDay(e.sleepTime, firstDate, lastDate),
+					x: e.sleepTime.clone(),
 					y: nSleep,
 					r: 0 - nSleep,
 				}, {
-					x: normalizeDay(e.endTime, firstDate, lastDate),
+					x: e.endTime.clone(),
 					y: MIN_PER_DAY,
 					r: nEnd - MIN_PER_DAY,
 				});
 			} else {
 				normalizedSleepEvents.push({
-					x: normalizeDay(e.sleepTime, firstDate, lastDate),
+					x: e.sleepTime.clone(),
 					y: nSleep,
 					r: nEnd - nSleep,
 				})
@@ -249,6 +279,7 @@ function select(state) {
 	}
 
    return {
+
       graphData: {
       	preSleep: normalizedPreSleepEvents,
       	sleep: normalizedSleepEvents,
@@ -256,8 +287,8 @@ function select(state) {
       	sleepSumTrend: sleepSumTrendEvents, 
 	  },
       timeSpan: {
-      	fromDate: firstDate,
-      	toDate: lastDate
+      	fromDate: from || firstDate,
+      	toDate: to || lastDate
       }
    }
 }
