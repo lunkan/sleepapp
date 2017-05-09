@@ -1,6 +1,7 @@
 import React, { Component, PropTypes } from 'react'
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
+import Moment from 'frozen-moment';
 
 import { grey500, grey400, darkBlack, lightBlack, pinkA200, transparent } from 'material-ui/styles/colors';
 import IconDay from 'material-ui/svg-icons/image/wb-sunny';
@@ -15,9 +16,10 @@ import MenuItem from 'material-ui/MenuItem';
 import Dialog from 'material-ui/Dialog';
 import Avatar from 'material-ui/Avatar';
 
-import PageHeader from './PageHeader.jsx';
+import SleepEvent from '../helpers/SleepEvent.js';
+import { humanizeDuration, MS_PER_DAY } from '../helpers/time-formats.js';
 
-import EventMap from '../helpers/eventmap.js';
+import PageHeader from './PageHeader.jsx';
 
 class EventLog extends Component {
 	constructor() {
@@ -65,14 +67,12 @@ class EventLog extends Component {
 	}
 
 	EventLogSleepEventText(sleepEvent) {
-	  	const { sleepType, sleepTime, endTime } = sleepEvent;
-	  	const fromStyle = sleepType === 'dusk' ? {color:lightBlack} : {};
-	  	const toStyle = sleepType === 'dawn' ? {color:lightBlack} : {};
+	  	const { sleep, wakeup } = sleepEvent;
 
 	  	return (<span>
-	  		<span style={fromStyle}>{sleepTime.format('HH:mm')}</span>
+	  		<span>{sleep.format('HH:mm')}</span>
 	  		&nbsp;-&nbsp;
-	  		<span style={toStyle}>{endTime.format('HH:mm')}</span>
+	  		<span>{wakeup.format('HH:mm')}</span>
 	  	</span>);
 	}
 
@@ -81,68 +81,80 @@ class EventLog extends Component {
 
 	  	return (<ListItem key={id}
 	  		primaryText={this.EventLogSleepEventText(sleepEvent)}
-			secondaryText={duration}
+			secondaryText={humanizeDuration(duration)}
 			leftIcon={this.EventLogSleepEventIcon(sleepEvent)}
 			rightIconButton={this.EventLogSleepEventMenu(sleepEvent)} />);
 	}
 
 	EventLogDayBadge(day) {
-		const { isWeekend, weekLabel, label } = day;
-		const badgeColor = isWeekend ? pinkA200 : lightBlack;
+		const badgeColor = day.isoWeekday() > 5 ? pinkA200 : lightBlack;
 
 		return (<Avatar color={badgeColor} backgroundColor={transparent} style={{left: 8}}>
 			<div style={{textAlign:'center'}}>
-				<div>{label}</div>
-				<small style={{fontSize:14}}>{weekLabel}</small>
+				<div>{day.date()}</div>
+				<small style={{fontSize:14}}>{day.format('ddd')}</small>
 			</div>
 		</Avatar>);
 	}
 
 	EventLogDay(day) {
-		const { key, summary, details, data } = day;
+		const { key, data } = day;
 
-	  	return (<div key={key}>
+		const dayMoment = Moment(key);
+		const preSleep = data.reduce((acc, e) => acc + e.preSleepDuration, 0);
+		const sleep = data.reduce((acc, e) => acc + e.sleepDuration, 0);
+		const active = MS_PER_DAY - (preSleep + sleep);
+
+		const summary = `Slept ${humanizeDuration(sleep)}`;
+		const details = `Active: ${humanizeDuration(active, true)}, 
+			Pre-sleep: ${humanizeDuration(preSleep, true)}`;
+
+	  	return (<div key={dayMoment.unix()}>
 	  		<ListItem
 	  			primaryText={summary}
 	  			secondaryText={details}
-	  			leftAvatar={this.EventLogDayBadge(day)}
+	  			leftAvatar={this.EventLogDayBadge(dayMoment)}
 	  			nestedItems={data.map(this.EventLogSleepEvent)} />
 		    <Divider inset={true} />
 		</div>);
 	}
 
 	EventLogWeek(week) {
-		const { key, data } = week;
+		const weekMoment = Moment(week.key);
+		const weekNumber = weekMoment.format('W');
+		const monthYear = weekMoment.format('MMM YYYY');
 
-		return (<List key={key}>
-	  		<Subheader style={{fontFamily:"Roboto"}}>{key}</Subheader>
-	  		{data.map(this.EventLogDay)}
+		return (<List key={weekMoment.unix()}>
+	  		<Subheader style={{fontFamily:"Roboto"}}>
+	  			{ `Week ${weekNumber} ${monthYear}` }
+	  		</Subheader>
+	  		{week.data.map(this.EventLogDay)}
 	  	</List>);
 	}
 
 	render() {
-		const { eventMap } = this.props;
+		const { sleepEvents } = this.props;
 
 		return (
 			<div>
 				<PageHeader pageTitle="Sleep log"/>
-				{eventMap.map(this.EventLogWeek)}
+				{sleepEvents.map(this.EventLogWeek)}
 			</div>);
 	}
 }
 
 function select(state) {
-	var { from, to } = state.config.eventFilter;
-	var events = state.sleepEvents;
+	const { from, to } = state.config.eventFilter;
+	const { sleepEvents } = state;
 
-	if(from && to){
-		events = events.filter(e => e.startTime.diff(from) > 0);
-	}
-
-	var eventMap = new EventMap(events);
+	var selectedEvents = sleepEvents.filter(e => e.intersect(from, to))
+		.reduce((acc, e) => acc.concat(e.breakApart(0)), [])
+		.group(e => e.preSleep.startOf('day').format())
+		.sort((a, b) => Moment(b.key).diff(Moment(a.key)))
+		.group(g => Moment(g.key).startOf('isoweek').format());
 
 	return {
-		eventMap: eventMap.toNestedArray()
+		sleepEvents: selectedEvents
 	}
 }
 

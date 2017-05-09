@@ -33,21 +33,21 @@ class ModalDeleteSleepEvent extends Component {
 	}
 
 	render() {
-		const { match, events } = this.props;
-		const selectedEvent = events.find(event => event.id === match.params.id);
+		const { match, sleepEvents } = this.props;
+		const selectedEvent = sleepEvents.find(event => event.id === match.params.id);
 		const DELETE_EVENT_TEXT = 'Delete sleep event';
 		const DELETE_EVENT_MESSAGE = 'Are you sure you want to delete event?';
 
 		return 	(<Dialog title={DELETE_EVENT_TEXT} actions={this.modalActions()} modal={true} open={true}>
 			<h3>{DELETE_EVENT_MESSAGE}</h3>
-			<p>{selectedEvent.sleepTime.format('dddd, MMMM Do HH:mm')} - {selectedEvent.endTime.format('dddd, MMMM Do HH:mm')}</p>
+			<p>{selectedEvent.sleep.format('dddd, MMMM Do HH:mm')} - {selectedEvent.wakeup.format('dddd, MMMM Do HH:mm')}</p>
 		</Dialog>);
 	}
 }
 
 function select(state) {
 	return {
-		events: state.sleepEvents
+		sleepEvents: state.sleepEvents
 	}
 }
 

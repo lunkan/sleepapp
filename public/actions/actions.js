@@ -1,5 +1,7 @@
 import Moment from 'moment'
 
+import SleepEvent from '../helpers/SleepEvent.js';
+
 export const SET_CONFIG = 'SET_CONFIG';
 export const RECEIVE_SLEEP_EVENT = 'RECEIVE_SLEEP_EVENT';
 export const SAVE_SLEEP_FORM = 'SAVE_SLEEP_FORM';
@@ -23,8 +25,8 @@ export function setFilter(type) {
 			filter.to = Moment();
 			filter.from = filter.to.clone().subtract(1, 'year');
 		default:
-			filter.from = null;
-			filter.to = null;
+			filter.from = undefined;
+			filter.to = undefined;
 			break;
 
 	}
@@ -39,13 +41,19 @@ export function setFilter(type) {
 export function receiveEvents(json) {
 	return {
 		type: RECEIVE_SLEEP_EVENT,
-		events: json.data.map(event => ({
+		events: json.data.map(event => 
+			new SleepEvent(event.id, event.startTime, event.sleepTime, event.endTime)
+		)	
+	}
+
+	/*
+	({
 			id: event.id,
 			startTime: Moment(event.startTime),
 			sleepTime: Moment(event.sleepTime),
 			endTime: Moment(event.endTime)
 		}))
-	}
+*/
 }
 
 export function fetchSleepEvents() {

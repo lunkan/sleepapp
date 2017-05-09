@@ -29,6 +29,13 @@ Object.defineProperty(Array.prototype, 'group', {
   }
 });
 
+Object.defineProperty(Array.prototype, 'last', {
+  enumerable: false,
+  value: function () {
+    return this[this.length - 1];
+  }
+});
+
 injectTapEventPlugin();
 
 const store = createStore(

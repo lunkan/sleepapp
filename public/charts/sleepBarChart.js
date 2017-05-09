@@ -2,7 +2,7 @@
 
 module.exports = function(Chart) {
 
-	Chart.controllers.sleep = Chart.DatasetController.extend({
+	Chart.controllers.sleepBarChart = Chart.DatasetController.extend({
 
 		// Create elements for each piece of data in the dataset. Store elements in an array on the dataset as dataset.metaData
 	    addElements: function() {
@@ -27,7 +27,7 @@ module.exports = function(Chart) {
 	    // Draw the representation of the dataset
 	    // @param ease : if specified, this number represents how far to transition elements. See the implementation of draw() in any of the provided controllers to see how this should be used
 	    draw: function(ease) {
-	    	
+
 			var ctx = this.chart.chart.ctx;
 			var chartArea = this.chart.chartArea;
 			var elements = this.getMeta().data;
@@ -52,24 +52,14 @@ module.exports = function(Chart) {
 
 				let d = dataset.data[i];
 				var x = xScale.getPixelForValue(d, i, this.index, true) - barWith * 0.5;
-				var y = d.y * yScale.height + yScale.top;
-				var barHeight = d.r * yScale.height;
+				var y = (1 - d.y) * yScale.height + yScale.top;
+				var barHeight = -d.r * yScale.height;
 
 				ctx.fillRect(x, y, barWith, barHeight);
 				ctx.strokeRect(x, y, barWith, barHeight);
 			}
 			Chart.canvasHelpers.unclipArea(ctx);
 	    },
-
-	    /*// Remove hover styling from the given element
-	    removeHoverStyle: function(element) {
-	    	//console.log('removeHoverStyle');
-	    },
-
-	    // Add hover styling to the given element
-	    setHoverStyle: function(element) {
-	    	//console.log('setHoverStyle');
-	    },*/
 
 	    // Update the elements in response to new data
 	    // @param reset : if true, put the elements into a reset state so they can animate to their final values
@@ -86,7 +76,7 @@ module.exports = function(Chart) {
 
 			meta.stack = dataset.stack;
 			// Use this to indicate that this is a sleep dataset.
-			meta.sleep = true;
+			meta.sleepBarChart = true;
 		},
 	});
 };

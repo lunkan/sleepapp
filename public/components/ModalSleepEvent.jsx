@@ -37,14 +37,14 @@ class ModalSleepEvent extends Component {
 		const sleepEvent = sleepEvents.find(sleepEvent => sleepEvent.id === match.params.id);
 
 		if(sleepEvent) {
-			const {startTime, sleepTime, endTime, id} = sleepEvent;
+			const {preSleep, sleep, wakeup, id} = sleepEvent;
 
 			this.setState({
 				id: id,
-				date: sleepTime ? sleepTime.toDate() : new Date(),
-				sleepTime: sleepTime ? sleepTime.toDate() : null,
-				endTime: endTime ? endTime.toDate() : null,
-				preSleepDuration: startTime && sleepTime ? Math.round(sleepTime.diff(startTime)/60000) : 0,
+				date: sleep ? sleep.toDate() : new Date(),
+				sleepTime: sleep ? sleep.toDate() : null,
+				endTime: wakeup ? wakeup.toDate() : null,
+				preSleepDuration: preSleep && sleep ? sleep.diff(preSleep, 'minutes') : 0,
 			});
 		}
 	}
@@ -84,7 +84,7 @@ class ModalSleepEvent extends Component {
 	}
 
 	render() {
-		const { match, sleepForm } = this.props;
+		const { match } = this.props;
 		const { date, sleepTime, endTime, preSleepDuration } = this.state;
 
 		const title = match.params.id ? 'Edit sleep event' : 'Add sleep event';
@@ -102,8 +102,7 @@ class ModalSleepEvent extends Component {
 
 function select(state) {
 	return {
-		sleepEvents: state.sleepEvents,
-		sleepForm: state.sleepForm || {}
+		sleepEvents: state.sleepEvents
 	}
 }
 
