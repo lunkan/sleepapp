@@ -12870,6 +12870,18 @@ var SleepEvent = function () {
 			return this.preSleep.diff(moment) < 0 && this.wakeup.diff(moment) > 0;
 		}
 	}, {
+		key: 'intersectHours',
+		value: function intersectHours(fromHour, toHour) {
+			var fromMoment = this.sleep.startOf('day').add(fromHour, 'hour');
+			var toMoment = this.sleep.startOf('day').add(toHour, 'hour');
+
+			if (toHour < fromHour) {
+				toMoment = toMoment.add(1, 'day');
+			}
+
+			return this.contains(fromMoment) || this.contains(toMoment);
+		}
+	}, {
 		key: 'intersect',
 		value: function intersect() {
 			var from = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : (0, _frozenMoment2.default)(new Date(0));
@@ -35581,16 +35593,16 @@ var EventLog = function (_Component) {
 	}, {
 		key: 'EventLogSleepEventIcon',
 		value: function EventLogSleepEventIcon(o) {
-			var type = o.type;
+			var sleepType = o.sleepType;
 
 
-			switch (type) {
-				case 'active':
+			switch (sleepType) {
+				case 'day':
 					return _react2.default.createElement(_wbSunny2.default, null);
-				case 'sleep':
+				case 'night':
 					return _react2.default.createElement(_brightness2.default, null);
 				default:
-					return _react2.default.createElement(_wbSunny2.default, { className: 'icon-dawn' });
+					return undefined; //(<IconDay className='icon-dawn'/>);
 			}
 		}
 	}, {
@@ -35621,14 +35633,33 @@ var EventLog = function (_Component) {
 		value: function EventLogSleepEvent(o) {
 			var id = o.id,
 			    duration = o.duration,
-			    type = o.type;
+			    type = o.type,
+			    sleepType = o.sleepType;
 
 
-			return _react2.default.createElement(_List.ListItem, { key: id,
-				primaryText: this.EventLogSleepEventText(o),
-				secondaryText: (0, _timeFormats.humanizeDuration)(duration),
-				leftIcon: this.EventLogSleepEventIcon(o),
-				rightIconButton: type === 'sleep' ? this.EventLogSleepEventMenu(o) : null });
+			switch (type) {
+				case 'active':
+					var activeContainerStyle = {
+						padding: 4,
+						paddingLeft: 90,
+						fontFamily: "Roboto",
+						backgroundColor: _colors.yellow300,
+						fontSize: 14
+					};
+
+					return _react2.default.createElement(
+						'div',
+						{ style: activeContainerStyle },
+						(0, _timeFormats.humanizeDuration)(duration)
+					);
+				case 'sleep':
+					return _react2.default.createElement(_List.ListItem, { key: id,
+						primaryText: this.EventLogSleepEventText(o),
+						secondaryText: (0, _timeFormats.humanizeDuration)(duration),
+						leftIcon: this.EventLogSleepEventIcon(o),
+						rightIconButton: type === 'sleep' ? this.EventLogSleepEventMenu(o) : null });
+
+			}
 		}
 	}, {
 		key: 'EventLogDayBadge',
@@ -35670,13 +35701,13 @@ var EventLog = function (_Component) {
 			}).reduce(function (acc, e) {
 				return acc + e.preDuration;
 			}, 0);
-			var sleep = data.filter(function (e) {
-				return e.type === 'sleep';
+			var nightSleepDuration = data.filter(function (e) {
+				return e.sleepType === 'night';
 			}).reduce(function (acc, e) {
 				return acc + e.duration;
 			}, 0);
-			var active = data.filter(function (e) {
-				return e.type === 'active';
+			var daySleepDuration = data.filter(function (e) {
+				return e.sleepType === 'day';
 			}).reduce(function (acc, e) {
 				return acc + e.duration;
 			}, 0);
@@ -35708,13 +35739,13 @@ var EventLog = function (_Component) {
 					_Chip2.default,
 					{ className: 'chip-small', backgroundColor: _colors.grey100 },
 					_react2.default.createElement(_Avatar2.default, { color: _colors.blue300, backgroundColor: _colors.indigo900, icon: _react2.default.createElement(_brightness2.default, null) }),
-					(0, _timeFormats.humanizeDuration)(sleep, true)
+					(0, _timeFormats.humanizeDuration)(nightSleepDuration, true)
 				),
 				_react2.default.createElement(
 					_Chip2.default,
 					{ className: 'chip-small', backgroundColor: _colors.grey100 },
 					_react2.default.createElement(_Avatar2.default, { color: _colors.yellow300, backgroundColor: _colors.amber700, icon: _react2.default.createElement(_wbSunny2.default, null) }),
-					(0, _timeFormats.humanizeDuration)(active, true)
+					(0, _timeFormats.humanizeDuration)(daySleepDuration, true)
 				),
 				PresleepChip
 			);
@@ -35825,6 +35856,7 @@ function select(state) {
 		acc.push({
 			id: next.id,
 			type: 'sleep',
+			sleepType: next.intersectHours(22, 5) ? 'night' : 'day',
 			begins: next.sleep,
 			ends: next.wakeup,
 			preDuration: next.preSleepDuration,

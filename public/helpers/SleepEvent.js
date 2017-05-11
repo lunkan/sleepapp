@@ -36,6 +36,17 @@ export default class SleepEvent {
 		return this.preSleep.diff(moment) < 0 && this.wakeup.diff(moment) > 0;
 	}
 
+	intersectHours(fromHour, toHour) {
+		var fromMoment = this.sleep.startOf('day').add(fromHour, 'hour');
+		var toMoment = this.sleep.startOf('day').add(toHour, 'hour');
+
+		if(toHour < fromHour) {
+			toMoment = toMoment.add(1, 'day');
+		}
+
+		return this.contains(fromMoment) || this.contains(toMoment);
+	}
+
 	intersect(from = Moment(new Date(0)), to = Moment()) {
 		return this.preSleep.diff(from) >= 0 && this.wakeup.diff(to) <= 0;
 	}

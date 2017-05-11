@@ -9,6 +9,10 @@ app.enable('trust proxy');
 const Datastore = require('@google-cloud/datastore');
 const datastore = Datastore();
 
+//process.env.GCLOUD_PROJECT = 'sleepapp-162208';
+
+//console.log('process.env', process.env);
+
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json());
 app.use(express.static(path.resolve(path.join(__dirname, '/dist'))));

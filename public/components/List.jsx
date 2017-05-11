@@ -30,7 +30,7 @@ import Avatar from 'material-ui/Avatar';
 import Chip from 'material-ui/Chip';
 
 import SleepEvent from '../helpers/SleepEvent.js';
-import { humanizeDuration, MS_PER_DAY, MS_PER_MINUTE } from '../helpers/time-formats.js';
+import { humanizeDuration, MS_PER_DAY, MS_PER_MINUTE, MS_PER_HOUR } from '../helpers/time-formats.js';
 
 import PageHeader from './PageHeader.jsx';
 
@@ -74,12 +74,12 @@ class EventLog extends Component {
 	}
 
 	EventLogSleepEventIcon(o) {
-		const { type } = o;
+		const { sleepType } = o;
 
-		switch(type) {
-			case 'active': return (<IconDay/>);
-			case 'sleep': return (<IconNight/>);
-			default: return (<IconDay className='icon-dawn'/>);
+		switch(sleepType) {
+			case 'day': return (<IconDay/>);
+			case 'night': return (<IconNight/>);
+			default: return undefined;//(<IconDay className='icon-dawn'/>);
 		}
 	}
 
@@ -94,13 +94,29 @@ class EventLog extends Component {
 	}
 
 	EventLogSleepEvent(o) {
-	  	const { id, duration, type } = o;
+	  	const { id, duration, type, sleepType } = o;
 
-	  	return (<ListItem key={id}
-	  		primaryText={this.EventLogSleepEventText(o)}
-			secondaryText={humanizeDuration(duration)}
-			leftIcon={this.EventLogSleepEventIcon(o)}
-			rightIconButton={type === 'sleep' ? this.EventLogSleepEventMenu(o) : null} />);
+	  	switch(type) {
+	  		case 'active':
+	  			const activeContainerStyle = {
+	  				padding: 4,
+	  				paddingLeft: 90,
+	  				fontFamily:"Roboto",
+	  				backgroundColor: grey300,
+	  				fontSize: 14
+	  			};
+
+				return (<div style={activeContainerStyle}>{humanizeDuration(duration)}</div>);
+	  		case 'sleep':
+				return (<ListItem key={id}
+			  		primaryText={this.EventLogSleepEventText(o)}
+					secondaryText={humanizeDuration(duration)}
+					leftIcon={this.EventLogSleepEventIcon(o)}
+					rightIconButton={type === 'sleep' ? this.EventLogSleepEventMenu(o) : null} />);
+
+	  	}
+
+	  	
 	}
 
 	EventLogDayBadge(day) {
@@ -122,8 +138,8 @@ class EventLog extends Component {
 		const lastMoment = data.last().ends.format('MMM D HH:mm');
 		const durationHours = `${data.last().ends.diff(data.first().begins, 'hours')}h`;
 		const preSleep = data.filter(e => e.type === 'sleep').reduce((acc, e) => acc + e.preDuration, 0);
-		const sleep = data.filter(e => e.type === 'sleep').reduce((acc, e) => acc + e.duration, 0);
-		const active = data.filter(e => e.type === 'active').reduce((acc, e) => acc + e.duration, 0);
+		const nightSleepDuration = data.filter(e => e.sleepType === 'night').reduce((acc, e) => acc + e.duration, 0);
+		const daySleepDuration = data.filter(e => e.sleepType === 'day').reduce((acc, e) => acc + e.duration, 0);
 
 		const summary = `${firstMoment} - ${lastMoment}`;
 
@@ -144,11 +160,11 @@ class EventLog extends Component {
 			</Chip>
 			<Chip className="chip-small" backgroundColor={grey100}>
 				<Avatar color={blue300} backgroundColor={indigo900} icon={<IconNight />} />
-				{humanizeDuration(sleep, true)}
+				{humanizeDuration(nightSleepDuration, true)}
 			</Chip>
 			<Chip className="chip-small" backgroundColor={grey100}>
 				<Avatar color={yellow300} backgroundColor={amber700} icon={<IconDay />} />
-				{humanizeDuration(active, true)}
+				{humanizeDuration(daySleepDuration, true)}
 			</Chip>
 			{PresleepChip}
 			
@@ -235,6 +251,7 @@ function select(state) {
 			acc.push({
 				id: next.id,
 				type: 'sleep',
+				sleepType: next.intersectHours(22, 5) ? 'night' : 'day',
 				begins: next.sleep,
 				ends: next.wakeup,
 				preDuration: next.preSleepDuration,
