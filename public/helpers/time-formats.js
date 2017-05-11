@@ -7,12 +7,13 @@ export const MS_PER_DAY = 86400000;
 export function humanizeDuration(ms, useShortFormat = false) {
 	const hourVal = Math.floor(ms/MS_PER_HOUR);
 	const minuteVal = Math.floor((ms % MS_PER_HOUR) / MS_PER_MINUTE);
-	const hourTerm = useShortFormat ? 'h' : hourVal > 1 ? 'hours' : 'hour';
-	const minuteTerm = useShortFormat ? 'm' : minuteVal > 1 ? 'minutes' : 'minute';
 
-	if(hourVal > 0) {
-		return `${hourVal} ${hourTerm} and ${minuteVal} ${minuteTerm}`;
+	if(useShortFormat) {
+		return hourVal > 0 ? `${hourVal}h ${minuteVal}m` : `${minuteVal}m`;
 	} else {
-		return `${minuteVal} ${minuteTerm}`;
+		const hourTerm = hourVal > 1 ? 'hours' : 'hour';
+		const minuteTerm = minuteVal !== 1 ? 'minutes' : 'minute';
+
+		return hourVal > 0 ? `${hourVal} ${hourTerm} and ${minuteVal} ${minuteTerm}` : `${minuteVal} ${minuteTerm}`;
 	}
 }

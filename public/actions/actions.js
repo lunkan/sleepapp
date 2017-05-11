@@ -6,7 +6,7 @@ export const SET_CONFIG = 'SET_CONFIG';
 export const RECEIVE_SLEEP_EVENT = 'RECEIVE_SLEEP_EVENT';
 export const SAVE_SLEEP_FORM = 'SAVE_SLEEP_FORM';
 
-export function setFilter(type) {
+export function setFilter(type, from, to) {
 
 	var filter = {
 		type: type
@@ -24,7 +24,12 @@ export function setFilter(type) {
 		case 'year':
 			filter.to = Moment();
 			filter.from = filter.to.clone().subtract(1, 'year');
+		case 'custom':
+			filter.to = to;
+			filter.from = from;
+			break;
 		default:
+			//All
 			filter.from = undefined;
 			filter.to = undefined;
 			break;

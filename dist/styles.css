@@ -4,3 +4,22 @@
 .icon-dawn path {
 	transform: translateY(10px);
 }
+.sleep-event-day-item > div > div > div:nth-child(4) {
+	line-height: 18px !important;
+	height: 18px !important;
+}
+.chip-small {
+	float: left;
+	margin-right: 5px !important;
+}
+.chip-small div {
+	width: 18px !important;
+	height: 18px !important;
+}
+.chip-small span {
+	font-size: 10px !important;
+	line-height: 18px !important;
+}
+.chip-small svg {
+	margin: 3px !important;
+}

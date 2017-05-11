@@ -36,6 +36,13 @@ Object.defineProperty(Array.prototype, 'last', {
   }
 });
 
+Object.defineProperty(Array.prototype, 'first', {
+  enumerable: false,
+  value: function () {
+    return this[0];
+  }
+});
+
 injectTapEventPlugin();
 
 const store = createStore(
