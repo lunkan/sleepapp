@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-import { SET_CONFIG, RECEIVE_SLEEP_EVENT, INIT_SLEEP_FORM, PUT_SLEEP_FORM } from '../actions/actions';
+import { RECEIVE_USER, SET_CONFIG, RECEIVE_SLEEP_EVENT, INIT_SLEEP_FORM, PUT_SLEEP_FORM } from '../actions/actions';
 import { MS_PER_DAY, MS_PER_HOUR, humanizeDuration } from '../helpers/time-formats.js';
 
 var defaultConfig = {
@@ -12,6 +12,16 @@ var defaultConfig = {
    durationTrendTension: 0.1,
    durationTrendInterval: 10,
    durationTrendIntervalMax: 100
+}
+
+function user(state = {}, action) {
+   switch (action.type) {
+      case RECEIVE_USER:
+         console.log('reducer:RECEIVE_USER', action.data);
+         return action.data;
+      default:
+         return state;
+   }
 }
 
 function config(state = defaultConfig, action) {
@@ -51,7 +61,8 @@ function sleepForm(state = {}, action) {
 const sleepApp = combineReducers({
    sleepEvents,
    sleepForm,
-   config
+   config,
+   user
 })
 
 export default sleepApp

@@ -36,15 +36,23 @@ export default class SleepEvent {
 		return this.preSleep.diff(moment) < 0 && this.wakeup.diff(moment) > 0;
 	}
 
-	intersectHours(fromHour, toHour) {
-		var fromMoment = this.sleep.startOf('day').add(fromHour, 'hour');
-		var toMoment = this.sleep.startOf('day').add(toHour, 'hour');
+	intersectHours(from, to) {
+		return this.getMomentByHour(from) || this.getMomentByHour(to);
+	}
 
-		if(toHour < fromHour) {
-			toMoment = toMoment.add(1, 'day');
+	getMomentByHour(hour) {
+		var breakMoment = this.preSleep.startOf('day').add(hour, 'hour');
+
+		//May contain at minimum 2 occations (more if sleepduration is longer than)
+		for(let i = 0; i < 2; i++) {
+			if(this.contains(breakMoment)) {
+				return breakMoment;
+			}
+
+			breakMoment = breakMoment.add(1, 'day');
 		}
 
-		return this.contains(fromMoment) || this.contains(toMoment);
+		return null;
 	}
 
 	intersect(from = Moment(new Date(0)), to = Moment()) {
@@ -53,12 +61,11 @@ export default class SleepEvent {
 
   	//hh:mm
 	breakApart(hour) {
-		var breakMoment = this.preSleep.startOf('day').add(hour, 'hour');
 
-		//May break at minimum 2 occations (more if sleepduration is longer than)
-		for(let i = 0; i < 2; i++) {
-			if(this.contains(breakMoment)) {
-				return [new SleepEvent(
+		var breakMoment = this.getMomentByHour(hour);
+
+		if(breakMoment) {
+			return [new SleepEvent(
 					this.id,
 					this.preSleep.format(),
 					Moment.min(this.sleep, breakMoment).format(),
@@ -69,12 +76,9 @@ export default class SleepEvent {
 					Moment.max(this.sleep, breakMoment).format(),
 					this.wakeup.format()
 				)];
-			}
-
-			breakMoment = breakMoment.add(1, 'day');
+		} else {
+			return [this];
 		}
-
-		return [this];
 	}
 
 	

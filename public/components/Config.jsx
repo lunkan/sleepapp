@@ -31,8 +31,6 @@ class Config extends Component {
 			wakeup: e.wakeup.format(),
 		}));
 
-		console.log('events', JSON.stringify(exportData));
-
 		var dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportData));
 		var anchorElem = this.refs.exportAnchorElem;
 		anchorElem.setAttribute('href', dataStr);

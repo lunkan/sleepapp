@@ -111,14 +111,12 @@ class PageHeader extends Component {
           					<MenuItem value={'all'} primaryText="All" />
 			        	</IconMenu>
 			        	<RaisedButton
-			        		labelPosition="before"
 			        		icon={<IconFilter/>}
 			        		onTouchTap={this.handleOpenFilterMenu}
 			        		label={filterLabel} />
 						<Link to={{pathname: '/add', state: { modal: true }}}>
 							<RaisedButton
 						      label="New sleep event"
-						      labelPosition="before"
 						      primary={true}
 						      icon={<IconAdd />}/>
 						</Link>
