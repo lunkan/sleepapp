@@ -152,7 +152,6 @@ router.route('/user')
 
 					}).then(() => {
 						req.session.user = lookupId;
-						listUsers();
 						res.sendStatus(200);
 
 		    		}).catch((e) => {
@@ -171,7 +170,7 @@ router.route('/user')
 router.route('/login')
 	.post(function(req,res) {
 
-		listUsers();
+		//listUsers();
 		/*req.session.destroy(function(err) {
 			if(err) {
 				console.log(err);
@@ -191,7 +190,6 @@ router.route('/login')
 		datastore.runQuery(query).then((results) => {
 			const user = results[0][0];
 
-			console.log('results', user, credentials.password, credentials.username, results);
 			if(!user) {
 				res.status(400);
     			res.json({"Error": "Username or login is not correct."});
