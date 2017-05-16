@@ -7,6 +7,8 @@ import RaisedButton from 'material-ui/RaisedButton';
 
 import { createUser } from '../actions/actions';
 
+import MessageBox from './MessageBox.jsx';
+
 class CreateUserForm extends Component {
 	constructor() {
 		super();
@@ -21,6 +23,14 @@ class CreateUserForm extends Component {
 		this.handleUsernameChange = this.handleUsernameChange.bind(this);
 		this.handlePasswordChange = this.handlePasswordChange.bind(this);
 		this.handleRePasswordChange = this.handleRePasswordChange.bind(this);
+	}
+
+	componentWillUnmount() {
+		const { apiMessages, dispatch } = this.props;
+
+		if(apiMessages) {
+			dispatch(clearApiMessage('createUser'));
+		}
 	}
 
 	handleSubmit() {
@@ -43,6 +53,9 @@ class CreateUserForm extends Component {
 	}
 
 	render() {
+		const { apiMessages } = this.props;
+		const fieldErrors = apiMessages && apiMessages.fieldErrors ? apiMessages.fieldErrors : {};	
+
 		const cardStyle = {
 			margin: 24,
 			marginLeft: 'auto',
@@ -63,9 +76,27 @@ class CreateUserForm extends Component {
 			<Card style={cardStyle}>
 				<CardHeader title="New to sleep app?" subtitle="Create new account"/>
 			    <CardText>
-			    	<TextField onChange={this.handleUsernameChange} value={this.state.username} floatingLabelText="Username"/><br/>
-			    	<TextField onChange={this.handlePasswordChange} value={this.state.password} floatingLabelText="Password" type="password"/><br/>
-			    	<TextField onChange={this.handleRePasswordChange} value={this.state.repassword} floatingLabelText="Retype password" type="password"/><br/>
+			    	{ apiMessages ? <MessageBox errors={apiMessages.errors}/> : null }
+			    	<TextField
+			    		errorText={fieldErrors.username}
+			    		onChange={this.handleUsernameChange}
+			    		value={this.state.username}
+			    		floatingLabelText="Username"/>
+			    	<br/>
+			    	<TextField
+			    		errorText={fieldErrors.password}
+			    		onChange={this.handlePasswordChange}
+			    		value={this.state.password}
+			    		floatingLabelText="Password"
+			    		type="password"/>
+			    	<br/>
+			    	<TextField
+			    		errorText={fieldErrors.repassword}
+			    		onChange={this.handleRePasswordChange}
+			    		value={this.state.repassword}
+			    		floatingLabelText="Retype password"
+			    		type="password"/>
+			    	<br/>
 			    	<div style={buttonGroupStyle}>
 			    		<RaisedButton
 			    			label="Create user"
@@ -79,4 +110,12 @@ class CreateUserForm extends Component {
 	}
 }
 
-export default connect()(CreateUserForm);
+function select(state) {
+	const { apiMessages } = state;
+
+	return {
+		apiMessages: apiMessages['createUser']
+	}
+}
+
+export default connect(select)(CreateUserForm);

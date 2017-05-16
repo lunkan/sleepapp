@@ -112,8 +112,26 @@ router.route('/user')
 	})
 
 	.post(function(req, res) {
-		if(req.body) {
-	    	var credentials = req.body;
+		var credentials = req.body;
+
+		var requiredFields = {};
+		if(!credentials.username) {
+			requiredFields.username = 'Require field';
+		}
+		if(!credentials.password) {
+			requiredFields.password = 'Require field';
+		}
+		if(!credentials.repassword) {
+			requiredFields.repassword = 'Require field';
+		}
+
+		if(Object.keys(requiredFields).length) {
+			res.status(400);
+			res.json({
+				fieldErrors: requiredFields
+			});
+			
+		} else {
 
 			const query = datastore.createQuery('user')
 				.filter('username', '=', credentials.username);
@@ -156,14 +174,10 @@ router.route('/user')
 
 		    		}).catch((e) => {
 		    			res.status(400);
-		    			res.json({"message": "Datastore error: could not add user!"});
+		    			res.json({"errors": ["Datastore error: could not add user!"]});
 		    		});
 				}
 			});
-	    	
-		} else {
-			res.status(400);
-			res.json({"message": "Post data missing!"});
 		}
 	});
 
@@ -182,23 +196,42 @@ router.route('/login')
 		var credentials = req.body;
 		var userKey = datastore.key('user');
 
-		const query = datastore.createQuery('user')
-				.filter('username', '=', credentials.username)
-				.filter('password', '=', credentials.password)
-				.limit(1);
+		var requiredFields = {};
+		if(!credentials.username) {
+			requiredFields.username = 'Require field';
+		}
+		if(!credentials.password) {
+			requiredFields.password = 'Require field';
+		}
 
-		datastore.runQuery(query).then((results) => {
-			const user = results[0][0];
+		if(Object.keys(requiredFields).length) {
+			res.status(400);
+			res.json({
+				fieldErrors: requiredFields
+			});
 
-			if(!user) {
-				res.status(400);
-    			res.json({"Error": "Username or login is not correct."});
+		} else {
 
-			} else {
-				req.session.user = user.id;
-				res.sendStatus(200);
-			}
-		});
+			const query = datastore.createQuery('user')
+					.filter('username', '=', credentials.username)
+					.filter('password', '=', credentials.password)
+					.limit(1);
+
+			datastore.runQuery(query).then((results) => {
+				const user = results[0][0];
+
+				if(!user) {
+					res.status(400);
+	    			res.json({
+	    				"errors": ["Username or login is not correct."]
+	    			});
+
+				} else {
+					req.session.user = user.id;
+					res.sendStatus(200);
+				}
+			});
+		};
 	});
 
 router.route('/logout')

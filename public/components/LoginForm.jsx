@@ -5,7 +5,25 @@ import {Card, CardActions, CardHeader, CardText} from 'material-ui/Card';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 
-import { login } from '../actions/actions';
+import { login, clearApiMessage } from '../actions/actions';
+
+import MessageBox from './MessageBox.jsx';
+
+const cardStyle = {
+	margin: 24,
+	marginLeft: 'auto',
+	marginRight: 'auto',
+	maxWidth: 450
+};
+
+const buttonStyle = {
+	float: 'right'
+};
+
+const buttonGroupStyle = {
+	overflow: 'hidden',
+	marginTop: 24
+};
 
 class LoginForm extends Component {
 	constructor() {
@@ -19,6 +37,14 @@ class LoginForm extends Component {
 		this.handleSubmit = this.handleSubmit.bind(this);
 		this.handleUsernameChange = this.handleUsernameChange.bind(this);
 		this.handlePasswordChange = this.handlePasswordChange.bind(this);
+	}
+
+	componentWillUnmount() {
+		const { apiMessages, dispatch } = this.props;
+
+		if(apiMessages) {
+			dispatch(clearApiMessage('login'));
+		}
 	}
 
 	handleSubmit() {
@@ -36,27 +62,26 @@ class LoginForm extends Component {
 	}
 
 	render() {
-		const cardStyle = {
-			margin: 24,
-			marginLeft: 'auto',
-			marginRight: 'auto',
-			maxWidth: 450
-		};
-
-		const buttonStyle = {
-			float: 'right'
-		};
-
-		const buttonGroupStyle = {
-			overflow: 'hidden',
-			marginTop: 24
-		};
+		const { apiMessages } = this.props;
+		const fieldErrors = apiMessages && apiMessages.fieldErrors ? apiMessages.fieldErrors : {};	
 
 		return (
 			<Card style={cardStyle}>
 			    <CardText>
-			    	<TextField onChange={this.handleUsernameChange} value={this.state.username} floatingLabelText="Username"/><br/>
-			    	<TextField onChange={this.handlePasswordChange} value={this.state.password} floatingLabelText="Password" type="password"/><br/>
+			    	{ apiMessages ? <MessageBox errors={apiMessages.errors}/> : null }
+			    	<TextField
+			    		errorText={fieldErrors.username}
+			    		onChange={this.handleUsernameChange}
+			    		value={this.state.username}
+			    		floatingLabelText="Username"/>
+			    	<br/>
+			    	<TextField
+			    		errorText={fieldErrors.password}
+			    		onChange={this.handlePasswordChange}
+			    		value={this.state.password}
+			    		floatingLabelText="Password"
+			    		type="password"/>
+			    	<br/>
 			    	<div style={buttonGroupStyle}>
 			    		<RaisedButton
 			    			label="Login"
@@ -70,4 +95,12 @@ class LoginForm extends Component {
 	}
 }
 
-export default connect()(LoginForm);
+function select(state) {
+	const { apiMessages } = state;
+
+	return {
+		apiMessages: apiMessages['login']
+	}
+}
+
+export default connect(select)(LoginForm);

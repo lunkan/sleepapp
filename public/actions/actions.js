@@ -2,10 +2,27 @@ import Moment from 'moment'
 
 import SleepEvent from '../helpers/SleepEvent.js';
 
+export const SET_API_MESSAGE = 'SET_API_MESSAGE';
+export const CLEAR_API_MESSAGE = 'CLEAR_API_MESSAGE';
 export const RECEIVE_USER = 'RECEIVE_USER';
 export const SET_CONFIG = 'SET_CONFIG';
 export const RECEIVE_SLEEP_EVENT = 'RECEIVE_SLEEP_EVENT';
 export const SAVE_SLEEP_FORM = 'SAVE_SLEEP_FORM';
+
+function setApiMessage(id, messages) {
+	return {
+		type: SET_API_MESSAGE,
+		id: id,
+		data: messages
+	}
+}
+
+export function clearApiMessage(id) {
+	return {
+		type: CLEAR_API_MESSAGE,
+		id: id
+	}
+}
 
 function receiveUser(user) {
 	return {
@@ -48,7 +65,16 @@ export function createUser(username, password, repassword) {
 			credentials: 'include',
 			body: JSON.stringify(credentials)
 		})
-		.then(response => dispatch(fetchUser()));
+		.then(response => {
+			switch(response.status) {
+				case 200:
+					return dispatch(fetchUser());
+				default:
+					return response.json().then(
+						json => dispatch(setApiMessage('createUser', json))
+					);
+			}
+		});
 	}
 }
 
@@ -69,7 +95,17 @@ export function login(username, password) {
 			credentials: 'include',
 			body: JSON.stringify(credentials)
 		})
-		.then(response => dispatch(fetchUser()));
+		.then(response => {
+			switch(response.status) {
+				case 200:
+					return dispatch(fetchUser());
+				default:
+					return response.json().then(
+						json => dispatch(setApiMessage('login', json))
+					);
+			}
+		});
+		
 	}
 }
 
