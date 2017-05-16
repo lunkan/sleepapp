@@ -20,50 +20,68 @@ import MenuItem from 'material-ui/MenuItem';
 
 import { humanizeDuration } from '../helpers/time-formats.js';
 
+
+const styleInfo = {
+	flexGrow: 1,
+	boxSizing: 'border-box'
+}
+
 //Styles
 const styleContainer = {
 	flexDirection: 'row',
+	alignItems: 'center',
 	display: 'flex',
+	fontFamily:"Roboto",
+	boxSizing: 'border-box',
+	paddingTop: 8,
+	paddingBottom: 8
 }
 
 const activeContainerStyle = {
 	padding: 4,
-	paddingLeft: 90,
+	paddingLeft: 72,
 	fontFamily:"Roboto",
 	backgroundColor: grey300,
 	fontSize: 14
 };
 
-//Elements
-function OptionMenuIcon() {
-	return (
-		<IconButton touch={true} tooltip="more" tooltipPosition="bottom-left">
-	    	<MoreVertIcon color={grey400} />
-		</IconButton>
-	);
+const styleTypeIcon = {
+	paddingLeft: 24,
+	paddingRight: 24
 }
 
-function OptionMenu(props) {
-  	const { id } = props;
+const styleDetails = {
+	color: lightBlack,
+	fontSize: 14
+}
 
-  	return (
-  		<IconMenu iconButtonElement={<OptionMenuIcon/>}>
-	  		<MenuItem>
-	  			<Link to={{pathname: '/edit/' + id, state: { modal: true }}}>Edit</Link>
-	  		</MenuItem>
-	  		<MenuItem>
-	  			<Link to={{pathname: '/delete/' + id, state: { modal: true }}}>Delete</Link>
-	  		</MenuItem>
-	  	</IconMenu>
-  	);
+class OptionMenu extends Component {
+	render() {
+	  	const { id } = this.props;
+
+	  	return (
+	  		<IconMenu iconButtonElement={
+	  				<IconButton touch={true} tooltip="more" tooltipPosition="bottom-left">
+			    		<MoreVertIcon color={grey400} />
+					</IconButton>
+				}>
+		  		<MenuItem>
+		  			<Link to={{pathname: '/edit/' + id, state: { modal: true }}}>Edit</Link>
+		  		</MenuItem>
+		  		<MenuItem>
+		  			<Link to={{pathname: '/delete/' + id, state: { modal: true }}}>Delete</Link>
+		  		</MenuItem>
+		  	</IconMenu>
+	  	);
+	}
 }
 
 function TypeIcon(props) {
 	const { sleepType } = props;
 
 	switch(sleepType) {
-		case 'day': return (<IconDay/>);
-		case 'night': return (<IconNight/>);
+		case 'day': return (<IconDay style={styleTypeIcon}/>);
+		case 'night': return (<IconNight style={styleTypeIcon}/>);
 		default: return undefined;
 	}
 }
@@ -90,10 +108,11 @@ export default class LogSleepItem extends Component {
 				return (
 					<div style={styleContainer}>
 						<TypeIcon sleepType={sleepType}/>
-						<div>
+						<div style={styleInfo}>
 							<Label begins={begins} ends={ends}/>
-							<div>{humanizeDuration(duration)}</div>
+							<div style={styleDetails}>{humanizeDuration(duration)}</div>
 						</div>
+						<OptionMenu id={id}/>
 					</div>
 				);
 	  	}

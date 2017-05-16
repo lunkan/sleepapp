@@ -12,6 +12,15 @@ import {
 
 import LogDayItem from './LogDayItem.jsx';
 
+const styleLabel = {
+	fontFamily:"Roboto",
+	color: lightBlack,
+    fontSize: 14,
+    fontWeight: 500,
+	padding: 16,
+	paddingTop: 32
+}
+
 export default class LogWeekItem extends Component {
 	constructor() {
 		super();
@@ -50,8 +59,8 @@ export default class LogWeekItem extends Component {
 
 		return (
 			<div>
-	  			<div>{`Week ${weekNumber} ${monthYear}`}</div>
-	  			<LazyLoad onContentVisible={this.onLazyLoaded} height={containerHeight} offset={2000} once>
+	  			<div style={styleLabel}>{`Week ${weekNumber} ${monthYear}`}</div>
+	  			<LazyLoad onContentVisible={this.onLazyLoaded} height={containerHeight} offset={500} once>
 	  				<div>
 	  					{sortedDays.map(day => <LogDayItem key={day.key} day={day}/>)}
 	  				</div>

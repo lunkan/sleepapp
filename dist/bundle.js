@@ -36758,6 +36758,8 @@ function select(state) {
 		return e.date;
 	}).group(function (g) {
 		return (0, _frozenMoment2.default)(g.key).startOf('isoweek').format();
+	}).sort(function (a, b) {
+		return (0, _frozenMoment2.default)(b.key).diff((0, _frozenMoment2.default)(a.key));
 	});
 
 	return {
@@ -36842,12 +36844,39 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var ITEM_HEADER_HEIGHT = 90;
+var ITEM_HEADER_HEIGHT = 70;
 
-var styleLogDayHead = {
+var styleHeader = {
 	flexDirection: 'row',
+	alignItems: 'center',
 	display: 'flex',
+	fontFamily: "Roboto",
+	boxSizing: 'border-box',
+	borderBottomColor: _colors.grey100,
+	borderBottomWidth: 1,
+	borderBottomStyle: 'solid',
+	cursor: 'pointer',
 	height: ITEM_HEADER_HEIGHT
+};
+
+var styleHeaderInfo = {
+	flexGrow: 1,
+	boxSizing: 'border-box'
+};
+
+var styleSummary = {
+	marginTop: 4
+};
+
+var styleDateBadge = {
+	paddingLeft: 16,
+	paddingRight: 16,
+	lineHeight: 1
+};
+
+var styleDropMenuIcon = {
+	paddingLeft: 12,
+	paddingRight: 12
 };
 
 var PresleepChip = function PresleepChip(props) {
@@ -36889,7 +36918,7 @@ var Summary = function Summary(props) {
 
 	return _react2.default.createElement(
 		'div',
-		null,
+		{ style: styleSummary },
 		_react2.default.createElement(
 			_Chip2.default,
 			{ className: 'chip-small', backgroundColor: _colors.grey100 },
@@ -36920,7 +36949,7 @@ var DayBadge = function DayBadge(props) {
 
 	return _react2.default.createElement(
 		_Avatar2.default,
-		{ color: badgeColor, backgroundColor: _colors.transparent, style: { left: 8 } },
+		{ color: badgeColor, backgroundColor: _colors.transparent, style: styleDateBadge },
 		_react2.default.createElement(
 			'div',
 			{ style: { textAlign: 'center' } },
@@ -36960,9 +36989,7 @@ var LogDayItem = function (_Component) {
 			var data = this.props.day.data;
 
 
-			var sleepData = data.filter(function (o) {
-				return o.type === 'sleep' || o.data[1].sleep.diff(o.data[0].wakeup, 'hours') < 16 && o.data[1].sleep.date() === o.data[0].wakeup.date();
-			}).map(function (o) {
+			var sleepData = data.map(function (o) {
 				switch (o.type) {
 					case 'active':
 						return {
@@ -37003,10 +37030,6 @@ var LogDayItem = function (_Component) {
 			    sleepData = _state.sleepData;
 
 
-			if (!sleepData.length) {
-				return null;
-			}
-
 			var firstMoment = sleepData.first().begins.format('MMM D HH:mm');
 			var lastMoment = sleepData.last().ends.format('MMM D HH:mm');
 			var nestedItems = open ? sleepData.map(function (o) {
@@ -37018,11 +37041,11 @@ var LogDayItem = function (_Component) {
 				{ className: 'sleep-event-day-item' },
 				_react2.default.createElement(
 					'div',
-					{ style: styleLogDayHead, onClick: this.handleToggleExpand },
+					{ style: styleHeader, onClick: this.handleToggleExpand },
 					_react2.default.createElement(DayBadge, { dateString: key }),
 					_react2.default.createElement(
 						'div',
-						null,
+						{ style: styleHeaderInfo },
 						_react2.default.createElement(
 							'div',
 							null,
@@ -37030,7 +37053,7 @@ var LogDayItem = function (_Component) {
 						),
 						_react2.default.createElement(Summary, { sleepData: sleepData })
 					),
-					_react2.default.createElement(_keyboardArrowDown2.default, null)
+					open ? _react2.default.createElement(_keyboardArrowUp2.default, { style: styleDropMenuIcon }) : _react2.default.createElement(_keyboardArrowDown2.default, { style: styleDropMenuIcon })
 				),
 				_react2.default.createElement(
 					'div',
@@ -37108,56 +37131,86 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var styleInfo = {
+	flexGrow: 1,
+	boxSizing: 'border-box'
+};
+
 //Styles
 var styleContainer = {
 	flexDirection: 'row',
-	display: 'flex'
+	alignItems: 'center',
+	display: 'flex',
+	fontFamily: "Roboto",
+	boxSizing: 'border-box',
+	paddingTop: 8,
+	paddingBottom: 8
 };
 
 var activeContainerStyle = {
 	padding: 4,
-	paddingLeft: 90,
+	paddingLeft: 72,
 	fontFamily: "Roboto",
 	backgroundColor: _colors.grey300,
 	fontSize: 14
 };
 
-//Elements
-function OptionMenuIcon() {
-	return _react2.default.createElement(
-		_IconButton2.default,
-		{ touch: true, tooltip: 'more', tooltipPosition: 'bottom-left' },
-		_react2.default.createElement(_moreVert2.default, { color: _colors.grey400 })
-	);
-}
+var styleTypeIcon = {
+	paddingLeft: 24,
+	paddingRight: 24
+};
 
-function OptionMenu(props) {
-	var id = props.id;
+var styleDetails = {
+	color: _colors.lightBlack,
+	fontSize: 14
+};
+
+var OptionMenu = function (_Component) {
+	_inherits(OptionMenu, _Component);
+
+	function OptionMenu() {
+		_classCallCheck(this, OptionMenu);
+
+		return _possibleConstructorReturn(this, (OptionMenu.__proto__ || Object.getPrototypeOf(OptionMenu)).apply(this, arguments));
+	}
+
+	_createClass(OptionMenu, [{
+		key: 'render',
+		value: function render() {
+			var id = this.props.id;
 
 
-	return _react2.default.createElement(
-		_IconMenu2.default,
-		{ iconButtonElement: _react2.default.createElement(OptionMenuIcon, null) },
-		_react2.default.createElement(
-			_MenuItem2.default,
-			null,
-			_react2.default.createElement(
-				_reactRouterDom.Link,
-				{ to: { pathname: '/edit/' + id, state: { modal: true } } },
-				'Edit'
-			)
-		),
-		_react2.default.createElement(
-			_MenuItem2.default,
-			null,
-			_react2.default.createElement(
-				_reactRouterDom.Link,
-				{ to: { pathname: '/delete/' + id, state: { modal: true } } },
-				'Delete'
-			)
-		)
-	);
-}
+			return _react2.default.createElement(
+				_IconMenu2.default,
+				{ iconButtonElement: _react2.default.createElement(
+						_IconButton2.default,
+						{ touch: true, tooltip: 'more', tooltipPosition: 'bottom-left' },
+						_react2.default.createElement(_moreVert2.default, { color: _colors.grey400 })
+					) },
+				_react2.default.createElement(
+					_MenuItem2.default,
+					null,
+					_react2.default.createElement(
+						_reactRouterDom.Link,
+						{ to: { pathname: '/edit/' + id, state: { modal: true } } },
+						'Edit'
+					)
+				),
+				_react2.default.createElement(
+					_MenuItem2.default,
+					null,
+					_react2.default.createElement(
+						_reactRouterDom.Link,
+						{ to: { pathname: '/delete/' + id, state: { modal: true } } },
+						'Delete'
+					)
+				)
+			);
+		}
+	}]);
+
+	return OptionMenu;
+}(_react.Component);
 
 function TypeIcon(props) {
 	var sleepType = props.sleepType;
@@ -37165,9 +37218,9 @@ function TypeIcon(props) {
 
 	switch (sleepType) {
 		case 'day':
-			return _react2.default.createElement(_wbSunny2.default, null);
+			return _react2.default.createElement(_wbSunny2.default, { style: styleTypeIcon });
 		case 'night':
-			return _react2.default.createElement(_brightness2.default, null);
+			return _react2.default.createElement(_brightness2.default, { style: styleTypeIcon });
 		default:
 			return undefined;
 	}
@@ -37197,8 +37250,8 @@ function Label(props) {
 
 //Component
 
-var LogSleepItem = function (_Component) {
-	_inherits(LogSleepItem, _Component);
+var LogSleepItem = function (_Component2) {
+	_inherits(LogSleepItem, _Component2);
 
 	function LogSleepItem() {
 		_classCallCheck(this, LogSleepItem);
@@ -37232,14 +37285,15 @@ var LogSleepItem = function (_Component) {
 						_react2.default.createElement(TypeIcon, { sleepType: sleepType }),
 						_react2.default.createElement(
 							'div',
-							null,
+							{ style: styleInfo },
 							_react2.default.createElement(Label, { begins: begins, ends: ends }),
 							_react2.default.createElement(
 								'div',
-								null,
+								{ style: styleDetails },
 								(0, _timeFormats.humanizeDuration)(duration)
 							)
-						)
+						),
+						_react2.default.createElement(OptionMenu, { id: id })
 					);
 			}
 		}
@@ -37288,6 +37342,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var styleLabel = {
+	fontFamily: "Roboto",
+	color: _colors.lightBlack,
+	fontSize: 14,
+	fontWeight: 500,
+	padding: 16,
+	paddingTop: 32
+};
 
 var LogWeekItem = function (_Component) {
 	_inherits(LogWeekItem, _Component);
@@ -37347,12 +37410,12 @@ var LogWeekItem = function (_Component) {
 				null,
 				_react2.default.createElement(
 					'div',
-					null,
+					{ style: styleLabel },
 					'Week ' + weekNumber + ' ' + monthYear
 				),
 				_react2.default.createElement(
 					_reactLazyLoad2.default,
-					{ onContentVisible: this.onLazyLoaded, height: containerHeight, offset: 2000, once: true },
+					{ onContentVisible: this.onLazyLoaded, height: containerHeight, offset: 500, once: true },
 					_react2.default.createElement(
 						'div',
 						null,

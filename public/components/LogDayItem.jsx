@@ -25,12 +25,40 @@ import { humanizeDuration, MS_PER_DAY, MS_PER_MINUTE, MS_PER_HOUR } from '../hel
 
 import LogSleepItem from './LogSleepItem.jsx';
 
-const ITEM_HEADER_HEIGHT = 90;
+const ITEM_HEADER_HEIGHT = 70;
 
-const styleLogDayHead = {
+
+const styleHeader = {
 	flexDirection: 'row',
+	alignItems: 'center',
 	display: 'flex',
+	fontFamily:"Roboto",
+	boxSizing: 'border-box',
+	borderBottomColor: grey100,
+	borderBottomWidth: 1,
+	borderBottomStyle: 'solid',
+	cursor: 'pointer',
 	height: ITEM_HEADER_HEIGHT
+}
+
+const styleHeaderInfo = {
+	flexGrow: 1,
+	boxSizing: 'border-box'
+}
+
+const styleSummary = {
+	marginTop: 4
+}
+
+const styleDateBadge = {
+	paddingLeft: 16,
+	paddingRight: 16,
+	lineHeight: 1
+}
+
+const styleDropMenuIcon = {
+	paddingLeft: 12,
+	paddingRight: 12
 }
 
 const PresleepChip = (props) => {
@@ -57,7 +85,7 @@ const Summary = (props) => {
 	const daySleepDuration = sleepData.filter(e => e.sleepType === 'day').reduce((acc, e) => acc + e.duration, 0);
 
 	return (
-		<div>
+		<div style={styleSummary}>
 			<Chip className="chip-small" backgroundColor={grey100}>
 				<Avatar color={grey300} backgroundColor={blueGrey900} icon={<IconTime />} />
 				{durationHours}
@@ -81,7 +109,7 @@ const DayBadge = (props) => {
 	const badgeColor = dayMoment.isoWeekday() > 5 ? pink300 : lightBlack;
 
 	return (
-		<Avatar color={badgeColor} backgroundColor={transparent} style={{left: 8}}>
+		<Avatar color={badgeColor} backgroundColor={transparent} style={styleDateBadge}>
 			<div style={{textAlign:'center'}}>
 				<div>{dayMoment.date()}</div>
 				<small style={{fontSize:14}}>{dayMoment.format('ddd')}</small>
@@ -109,11 +137,6 @@ export default class LogDayItem extends Component {
 		const { data } = this.props.day;
 
 		const sleepData = data
-			.filter(o =>
-				o.type === 'sleep'
-				|| o.data[1].sleep.diff(o.data[0].wakeup, 'hours') < 16
-				&& o.data[1].sleep.date() === o.data[0].wakeup.date()
-			)
 			.map(o => {
 				switch(o.type) {
 					case 'active':
@@ -150,23 +173,19 @@ export default class LogDayItem extends Component {
 		const { key } = this.props.day;
 		const { open, sleepData } = this.state;
 
-		if(!sleepData.length) {
-			return null;
-		}
-
 		const firstMoment = sleepData.first().begins.format('MMM D HH:mm');
 		const lastMoment = sleepData.last().ends.format('MMM D HH:mm');
 		const nestedItems = open ? sleepData.map(o => <LogSleepItem key={o.id} sleepData={o}/>) : [];
 
 		return (
 			<div className="sleep-event-day-item">
-				<div style={styleLogDayHead} onClick={this.handleToggleExpand} >
+				<div style={styleHeader} onClick={this.handleToggleExpand} >
 					<DayBadge dateString={key}/>
-					<div>
+					<div style={styleHeaderInfo}>
 			  			<div>{`${firstMoment} - ${lastMoment}`}</div>
 			  			<Summary sleepData={sleepData}/>
 		  			</div>
-		  			<IconDownArrow/>
+		  			{ open ? <IconUpArrow style={styleDropMenuIcon}/> : <IconDownArrow style={styleDropMenuIcon}/> }
 		  		</div>
 	  			<div>
 	  				{nestedItems}

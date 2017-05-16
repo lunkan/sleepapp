@@ -85,7 +85,8 @@ function select(state) {
 
 		}, [])
 		.group(e => e.date)
-		.group(g => Moment(g.key).startOf('isoweek').format());
+		.group(g => Moment(g.key).startOf('isoweek').format())
+		.sort((a, b) => Moment(b.key).diff(Moment(a.key)));
 
 	return {
 		sleepEvents: selectedEvents
