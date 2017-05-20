@@ -86,7 +86,7 @@ export function login(username, password) {
 	      "password": password
 	  	};
 
-		return fetch('/api/login', {
+		return fetch('/api/session/login', {
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'
@@ -111,7 +111,7 @@ export function login(username, password) {
 
 export function logout() {
 	return function (dispatch) {
-		return fetch('/api/logout', {
+		return fetch('/api/session/logout', {
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'

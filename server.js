@@ -4,7 +4,11 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 
+const Api = require('./services/api/api.js');
+
 const app = express();
+
+
 app.enable('trust proxy');
 app.use(session({
 	secret: 'spacebear',
@@ -13,8 +17,8 @@ app.use(session({
 	cookie: {}
 }));
 
-const Datastore = require('@google-cloud/datastore');
-const datastore = Datastore();
+//const Datastore = require('@google-cloud/datastore');
+//const datastore = Datastore();
 
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json());
@@ -22,20 +26,20 @@ app.use(express.static(path.resolve(path.join(__dirname, '/dist'))));
 
 const PORT = process.env.PORT || 8080;
 
-var router = express.Router();
+//var router = express.Router();
 
 // middleware to use for all requests
-router.use(function(req, res, next) {
+/*router.use(function(req, res, next) {
 	console.log('Something is happening.', req.session.user);
 	next();
-});
+});*/
 
 
 app.get('/', function (req, res) {
 	res.sendFile(path.join(__dirname+'/index.html'));
 });
 
-function hashString(str) {
+/*function hashString(str) {
   var hash = 0, i, chr;
   if (str.length === 0) return hash;
   for (i = 0; i < str.length; i++) {
@@ -185,14 +189,14 @@ router.route('/login')
 	.post(function(req,res) {
 
 		//listUsers();
-		/*req.session.destroy(function(err) {
-			if(err) {
-				console.log(err);
-			} else {
-				deleteAllUsers();
-				res.sendStatus(200);
-			}
-		});*/
+		//req.session.destroy(function(err) {
+		//	if(err) {
+		//		console.log(err);
+		//	} else {
+		//		deleteAllUsers();
+		//		res.sendStatus(200);
+		//	}
+		//});
 		var credentials = req.body;
 		var userKey = datastore.key('user');
 
@@ -325,9 +329,11 @@ router.route('/sleep-event/:event_id')
 			res.status(400);
 			res.json({"error": e});
 		});
-	});
+	});*/
 
-app.use('/api', router);
+//app.use('/api', router);
+
+Api(app);
 
 app.get('/*', function (req, res) {
 	res.sendFile(path.join(__dirname+'/index.html'));
@@ -338,4 +344,4 @@ app.listen(PORT, () => {
   console.log('Press Ctrl+C to quit.');
 });
 
-module.exports = router
+//module.exports = router
