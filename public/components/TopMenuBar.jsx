@@ -41,9 +41,9 @@ class UserMenu extends React.Component {
 	}
 
 	render() {
-		const { user } = this.props;
+		const { session } = this.props;
 
-		if(!user.isAuthenticated) {
+		if(!session.isAuthenticated) {
 			return null;
 		}
 
@@ -59,13 +59,13 @@ class UserMenu extends React.Component {
 		        <FlatButton
 		        	style={{color:'#fff'}}
 		        	icon={<IconUser/>}
-		        	onTouchTap={this.handleOpenUserMenu} label={user.username} />
+		        	onTouchTap={this.handleOpenUserMenu} label={session.username} />
 	  		</div>
 		);
 	}
 }
 
-const UserMenuComponent = connect(state => ({ user: state.user }))(UserMenu);
+const UserMenuComponent = connect(state => ({ session: state.session }))(UserMenu);
 
 export default class TopMenuBar extends React.Component {
 

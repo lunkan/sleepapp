@@ -8,9 +8,9 @@ import CreateUserForm from './CreateUserForm.jsx';
 class Login extends Component {
 	render() {
 		const { from } = this.props.location.state || { from: { pathname: '/' } }
-		const { user } = this.props;
+		const { session } = this.props;
 
-		if (user.isAuthenticated) {
+		if (session.isAuthenticated) {
 			return (
         		<Redirect to={from}/>
       		)
@@ -27,7 +27,7 @@ class Login extends Component {
 
 function select(state) {
 	return {
-		user: state.user
+		session: state.session
 	}
 }
 

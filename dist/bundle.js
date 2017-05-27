@@ -6238,9 +6238,9 @@ module.exports = ReactCurrentOwner;
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-exports.SAVE_SLEEP_FORM = exports.RECEIVE_SLEEP_EVENT = exports.SET_CONFIG = exports.RECEIVE_USER = exports.CLEAR_API_MESSAGE = exports.SET_API_MESSAGE = undefined;
+exports.SAVE_SLEEP_FORM = exports.RECEIVE_SLEEP_EVENT = exports.SET_CONFIG = exports.RECEIVE_SESSION = exports.CLEAR_API_MESSAGE = exports.SET_API_MESSAGE = undefined;
 exports.clearApiMessage = clearApiMessage;
-exports.fetchUser = fetchUser;
+exports.fetchSession = fetchSession;
 exports.createUser = createUser;
 exports.login = login;
 exports.logout = logout;
@@ -6264,7 +6264,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var SET_API_MESSAGE = exports.SET_API_MESSAGE = 'SET_API_MESSAGE';
 var CLEAR_API_MESSAGE = exports.CLEAR_API_MESSAGE = 'CLEAR_API_MESSAGE';
-var RECEIVE_USER = exports.RECEIVE_USER = 'RECEIVE_USER';
+var RECEIVE_SESSION = exports.RECEIVE_SESSION = 'RECEIVE_SESSION';
 var SET_CONFIG = exports.SET_CONFIG = 'SET_CONFIG';
 var RECEIVE_SLEEP_EVENT = exports.RECEIVE_SLEEP_EVENT = 'RECEIVE_SLEEP_EVENT';
 var SAVE_SLEEP_FORM = exports.SAVE_SLEEP_FORM = 'SAVE_SLEEP_FORM';
@@ -6284,26 +6284,32 @@ function clearApiMessage(id) {
 	};
 }
 
-function receiveUser(user) {
+function receiveSession(session) {
 	return {
-		type: RECEIVE_USER,
-		data: user
+		type: RECEIVE_SESSION,
+		data: session
 	};
 }
 
-function fetchUser() {
+function setSession(session) {
+	return function (dispatch) {
+		dispatch(receiveSession(session));
+
+		if (session.isAuthenticated) {
+			dispatch(fetchSleepEvents());
+		}
+	};
+}
+
+function fetchSession() {
 	return function (dispatch) {
 
-		return fetch('/api/user', {
+		return fetch('/api/session', {
 			credentials: 'include'
 		}).then(function (response) {
 			return response.json();
-		}).then(function (user) {
-			return dispatch(receiveUser(user));
-		}).then(function (user) {
-			if (user.data.isAuthenticated) {
-				dispatch(fetchSleepEvents());
-			}
+		}).then(function (session) {
+			return dispatch(setSession(session));
 		});
 	};
 }
@@ -6328,10 +6334,13 @@ function createUser(username, password, repassword) {
 		}).then(function (response) {
 			switch (response.status) {
 				case 200:
-					return dispatch(fetchUser());
+					return response.json().then(function (session) {
+						return dispatch(setSession(session));
+					});
+
 				default:
-					return response.json().then(function (json) {
-						return dispatch(setApiMessage('createUser', json));
+					return response.json().then(function (errors) {
+						return dispatch(setApiMessage('createUser', errors));
 					});
 			}
 		});
@@ -6346,7 +6355,7 @@ function login(username, password) {
 			"password": password
 		};
 
-		return fetch('/api/session/login', {
+		return fetch('/api/session', {
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'
@@ -6357,7 +6366,10 @@ function login(username, password) {
 		}).then(function (response) {
 			switch (response.status) {
 				case 200:
-					return dispatch(fetchUser());
+					return response.json().then(function (session) {
+						return dispatch(setSession(session));
+					});
+
 				default:
 					return response.json().then(function (json) {
 						return dispatch(setApiMessage('login', json));
@@ -6369,15 +6381,17 @@ function login(username, password) {
 
 function logout() {
 	return function (dispatch) {
-		return fetch('/api/session/logout', {
+		return fetch('/api/session', {
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'
 			},
-			method: "POST",
+			method: "DELETE",
 			credentials: 'include'
 		}).then(function (response) {
-			return dispatch(fetchUser());
+			return response.json().then(function (session) {
+				return dispatch(setSession(session));
+			});
 		});
 	};
 }
@@ -35492,7 +35506,7 @@ var App = function (_React$Component) {
 		value: function componentWillMount() {
 			var dispatch = this.props.dispatch;
 
-			dispatch((0, _actions.fetchUser)());
+			dispatch((0, _actions.fetchSession)());
 		}
 	}, {
 		key: 'componentWillUpdate',
@@ -35509,7 +35523,7 @@ var App = function (_React$Component) {
 		value: function render() {
 			var _props = this.props,
 			    location = _props.location,
-			    user = _props.user;
+			    session = _props.session;
 
 			var isModal = !!(location.state && location.state.modal && this.previousLocation !== location // not initial render
 			);
@@ -35517,7 +35531,7 @@ var App = function (_React$Component) {
 			var PrivateRoute = function PrivateRoute(_ref) {
 				var Component = _ref.component;
 				return _react2.default.createElement(_reactRouterDom.Route, { render: function render(props) {
-						return user.isAuthenticated ? _react2.default.createElement(Component, props) : _react2.default.createElement(_reactRouterDom.Redirect, { to: {
+						return session.isAuthenticated ? _react2.default.createElement(Component, props) : _react2.default.createElement(_reactRouterDom.Redirect, { to: {
 								pathname: '/login',
 								state: { from: props.location }
 							} });
@@ -35556,7 +35570,7 @@ var App = function (_React$Component) {
 					_react2.default.createElement(
 						_reactRouterDom.Switch,
 						{ location: isModal ? this.previousLocation : location },
-						_react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: user.isAuthenticated ? _Overview2.default : _Login2.default }),
+						_react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: session.isAuthenticated ? _Overview2.default : _Login2.default }),
 						_react2.default.createElement(_reactRouterDom.Route, { path: '/login', component: _Login2.default }),
 						_react2.default.createElement(PrivateRoute, { path: '/graph', component: _Overview2.default }),
 						_react2.default.createElement(PrivateRoute, { path: '/list', component: _List2.default }),
@@ -35574,7 +35588,7 @@ var App = function (_React$Component) {
 
 function select(state) {
 	return {
-		user: state.user
+		session: state.session
 	};
 }
 
@@ -35627,12 +35641,12 @@ function apiMessages() {
    }
 }
 
-function user() {
+function session() {
    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
    var action = arguments[1];
 
    switch (action.type) {
-      case _actions.RECEIVE_USER:
+      case _actions.RECEIVE_SESSION:
          return action.data;
       default:
          return state;
@@ -35687,7 +35701,7 @@ var sleepApp = (0, _redux.combineReducers)({
    sleepEvents: sleepEvents,
    sleepForm: sleepForm,
    config: config,
-   user: user
+   session: session
 });
 
 exports.default = sleepApp;
@@ -36366,10 +36380,10 @@ var BottomMenuBar = function (_React$Component) {
 	_createClass(BottomMenuBar, [{
 		key: 'render',
 		value: function render() {
-			var user = this.props.user;
+			var session = this.props.session;
 
 
-			if (!user.isAuthenticated) {
+			if (!session.isAuthenticated) {
 				return null;
 			}
 
@@ -36422,7 +36436,7 @@ var BottomMenuBar = function (_React$Component) {
 
 function select(state) {
 	return {
-		user: state.user
+		session: state.session
 	};
 }
 
@@ -36666,7 +36680,7 @@ var CreateUserForm = function (_Component) {
 
 
 			if (apiMessages) {
-				dispatch(clearApiMessage('createUser'));
+				dispatch((0, _actions.clearApiMessage)('createUser'));
 			}
 		}
 	}, {
@@ -37650,10 +37664,10 @@ var Login = function (_Component) {
 			var _ref = this.props.location.state || { from: { pathname: '/' } },
 			    from = _ref.from;
 
-			var user = this.props.user;
+			var session = this.props.session;
 
 
-			if (user.isAuthenticated) {
+			if (session.isAuthenticated) {
 				return _react2.default.createElement(_reactRouterDom.Redirect, { to: from });
 			}
 
@@ -37671,7 +37685,7 @@ var Login = function (_Component) {
 
 function select(state) {
 	return {
-		user: state.user
+		session: state.session
 	};
 }
 
@@ -38579,10 +38593,10 @@ var UserMenu = function (_React$Component) {
 		value: function render() {
 			var _this2 = this;
 
-			var user = this.props.user;
+			var session = this.props.session;
 
 
-			if (!user.isAuthenticated) {
+			if (!session.isAuthenticated) {
 				return null;
 			}
 
@@ -38603,7 +38617,7 @@ var UserMenu = function (_React$Component) {
 				_react2.default.createElement(_FlatButton2.default, {
 					style: { color: '#fff' },
 					icon: _react2.default.createElement(_accountCircle2.default, null),
-					onTouchTap: this.handleOpenUserMenu, label: user.username })
+					onTouchTap: this.handleOpenUserMenu, label: session.username })
 			);
 		}
 	}]);
@@ -38612,7 +38626,7 @@ var UserMenu = function (_React$Component) {
 }(_react2.default.Component);
 
 var UserMenuComponent = (0, _reactRedux.connect)(function (state) {
-	return { user: state.user };
+	return { session: state.session };
 })(UserMenu);
 
 var TopMenuBar = function (_React$Component2) {

@@ -4,7 +4,7 @@ import SleepEvent from '../helpers/SleepEvent.js';
 
 export const SET_API_MESSAGE = 'SET_API_MESSAGE';
 export const CLEAR_API_MESSAGE = 'CLEAR_API_MESSAGE';
-export const RECEIVE_USER = 'RECEIVE_USER';
+export const RECEIVE_SESSION = 'RECEIVE_SESSION';
 export const SET_CONFIG = 'SET_CONFIG';
 export const RECEIVE_SLEEP_EVENT = 'RECEIVE_SLEEP_EVENT';
 export const SAVE_SLEEP_FORM = 'SAVE_SLEEP_FORM';
@@ -24,26 +24,31 @@ export function clearApiMessage(id) {
 	}
 }
 
-function receiveUser(user) {
+function receiveSession(session) {
 	return {
-		type: RECEIVE_USER,
-		data: user
+		type: RECEIVE_SESSION,
+		data: session
 	}
 }
 
-export function fetchUser() {
+function setSession(session) {
+	return function (dispatch) {
+		dispatch(receiveSession(session));
+
+		if(session.isAuthenticated) {
+			dispatch(fetchSleepEvents());
+		}
+	}
+}
+
+export function fetchSession() {
 	return function (dispatch) {
 
-		return fetch('/api/user', {
+		return fetch('/api/session', {
 				credentials: 'include'
 			})
 			.then(response => response.json())
-			.then(user => dispatch(receiveUser(user)))
-			.then(user => {
-				if(user.data.isAuthenticated) {
-					dispatch(fetchSleepEvents());
-				}
-			});
+			.then(session => dispatch(setSession(session)));
 	}
 }
 
@@ -68,10 +73,13 @@ export function createUser(username, password, repassword) {
 		.then(response => {
 			switch(response.status) {
 				case 200:
-					return dispatch(fetchUser());
+					return response.json().then(
+						session => dispatch(setSession(session))
+					);
+
 				default:
 					return response.json().then(
-						json => dispatch(setApiMessage('createUser', json))
+						errors => dispatch(setApiMessage('createUser', errors))
 					);
 			}
 		});
@@ -86,7 +94,7 @@ export function login(username, password) {
 	      "password": password
 	  	};
 
-		return fetch('/api/session/login', {
+		return fetch('/api/session', {
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'
@@ -98,7 +106,10 @@ export function login(username, password) {
 		.then(response => {
 			switch(response.status) {
 				case 200:
-					return dispatch(fetchUser());
+					return response.json().then(
+						session => dispatch(setSession(session))
+					);
+
 				default:
 					return response.json().then(
 						json => dispatch(setApiMessage('login', json))
@@ -111,15 +122,17 @@ export function login(username, password) {
 
 export function logout() {
 	return function (dispatch) {
-		return fetch('/api/session/logout', {
+		return fetch('/api/session', {
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'
 			},
-			method: "POST",
+			method: "DELETE",
 			credentials: 'include',
 		})
-		.then(response => dispatch(fetchUser()));
+		.then(response => response.json().then(
+			session => dispatch(setSession(session))
+		));
 	}
 }
 

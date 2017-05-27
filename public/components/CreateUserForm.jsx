@@ -5,7 +5,7 @@ import {Card, CardActions, CardHeader, CardText} from 'material-ui/Card';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 
-import { createUser } from '../actions/actions';
+import { createUser, clearApiMessage } from '../actions/actions';
 
 import MessageBox from './MessageBox.jsx';
 

@@ -13,9 +13,9 @@ import IconSettings from 'material-ui/svg-icons/action/settings';
 class BottomMenuBar extends React.Component {
 
 	render() {
-   		const { user} = this.props;
+   		const { session} = this.props;
 
-   		if(!user.isAuthenticated) {
+   		if(!session.isAuthenticated) {
 			return null;
 		}
 
@@ -39,7 +39,7 @@ class BottomMenuBar extends React.Component {
 
 function select(state) {
    return {
-      user: state.user
+      session: state.session
    }
 }
 

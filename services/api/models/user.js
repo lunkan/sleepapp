@@ -1,9 +1,8 @@
 'use strict';
-const bcrypt = require('bcrypt-nodejs');
 const ds = require('../datastore.js');
 
 const NAME = 'user';
-const USER_VALID_CHARS_REGEX = /^\w+$/;
+const USER_VALID_CHARS_REGEX = /^[\w]*[^\W_][\w]*$/;//Letters, numbers and underscore
 const USER_VALID_MIN_LENGTH = 5;
 
 class UserModel {
@@ -17,7 +16,7 @@ class UserModel {
 	}
 
 	static get(username) {
-		const key = getKey(username);
+		const key = UserModel.getKey(username);
 		return ds.get(key).then((results) => {
 			return results[0] ? new UserModel(results[0]) : null;
 		});
@@ -43,30 +42,34 @@ class UserModel {
 		return ds.delete(key);
 	}
 
-	constructor(data) {
-		this.username = data.username;
-		this.password = data.password;		
+	static clear() {
+		const query = ds.createQuery(NAME);
+		return ds.runQuery(query).then((results) => {
+			return results[0].map(model => model[ds.KEY]);
+		}).then(deleteKeys => {
+			return ds.delete(deleteKeys)
+		});
 	}
 
-	set password(value) {
-		return bcrypt.hashSync(value);
+	constructor(data) {
+		this.username = data.username;
+		this.password = data.password;
 	}
 
 	isValid() {
 		return this.username && this.password
 			&& USER_VALID_CHARS_REGEX.test(this.username)
-			&& this.username.length > USER_VALID_MIN_LENGTH;
+			&& this.username.length >= USER_VALID_MIN_LENGTH;
 
 	}
 
 	getFieldErrors() {
 		var fieldErrors = {};
-
 		if(!this.username) {
 			fieldErrors.username = "Required";
-		} else if(USER_VALID_CHARS_REGEX.test(this.username)) {
+		} else if(!USER_VALID_CHARS_REGEX.test(this.username)) {
 			fieldErrors.username = "May contain letters, numbers & underscore only.";
-		} else if(this.username.length > USER_VALID_MIN_LENGTH) {
+		} else if(this.username.length < USER_VALID_MIN_LENGTH) {
 			fieldErrors.username = "Username must be at least 5 character long.";
 		}
 
@@ -81,7 +84,14 @@ class UserModel {
 		//Don't send password to client
 		return {
 			username: this.username
-		}
+		};
+	}
+
+	parse() {
+		return {
+			username: this.username,
+			password: this.password
+		};
 	}
 
 	save() {
@@ -94,7 +104,7 @@ class UserModel {
 					}
 				});
 			} else {
-				resolve(this);
+				resolve(this.parse());
 			}
 
 		}).then(model => {
@@ -103,11 +113,11 @@ class UserModel {
 				data: model
 			};
 
-			return ds.upsert(entity).then(response =>
-				new UserModel(response[0][0])
-			);
+			return ds.upsert(entity).then(response => {
+				return new UserModel(model)
+			});
     	});
 	}
-});
+};
 
 module.exports = UserModel;

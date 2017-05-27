@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { BrowserRouter as Router, Route, Switch, Link, Redirect, withRouter } from 'react-router-dom';
 
-import { fetchUser } from './actions/actions';
+import { fetchSession } from './actions/actions';
 
 import TopMenuBar from './components/TopMenuBar.jsx';
 import BottomMenuBar from './components/BottomMenuBar.jsx';
@@ -19,7 +19,7 @@ class App extends React.Component {
 
 	componentWillMount() {
     	const {dispatch} = this.props;
-		dispatch(fetchUser());
+		dispatch(fetchSession());
   	}
 
   	componentWillUpdate(nextProps) {
@@ -31,7 +31,7 @@ class App extends React.Component {
 	}
 
 	render() {
-   		const { location, user } = this.props
+   		const { location, session } = this.props
     	const isModal = !!(
       		location.state &&
       		location.state.modal &&
@@ -40,7 +40,7 @@ class App extends React.Component {
 
 		const PrivateRoute = ({ component: Component }) => (
 			<Route render={props =>
-				(user.isAuthenticated ? (
+				(session.isAuthenticated ? (
 		    		<Component {...props}/>
 		    	) : (
 		      		<Redirect to={{
@@ -76,7 +76,7 @@ class App extends React.Component {
 		    	<TopMenuBar/>
 		    	<div style={contentStyle}>
 		    		<Switch location={isModal ? this.previousLocation : location}>
-		    			<Route exact path="/" component={user.isAuthenticated ? Graph : Login}/>
+		    			<Route exact path="/" component={session.isAuthenticated ? Graph : Login}/>
 						<Route path='/login' component={Login} />
 				  		<PrivateRoute path="/graph" component={Graph}/>
 				  		<PrivateRoute path="/list" component={Log}/>
@@ -92,7 +92,7 @@ class App extends React.Component {
 
 function select(state) {
    return {
-      user: state.user
+      session: state.session
    }
 }
 

@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-import { SET_API_MESSAGE, CLEAR_API_MESSAGE, RECEIVE_USER, SET_CONFIG, RECEIVE_SLEEP_EVENT, INIT_SLEEP_FORM, PUT_SLEEP_FORM } from '../actions/actions';
+import { SET_API_MESSAGE, CLEAR_API_MESSAGE, RECEIVE_SESSION, SET_CONFIG, RECEIVE_SLEEP_EVENT, INIT_SLEEP_FORM, PUT_SLEEP_FORM } from '../actions/actions';
 import { MS_PER_DAY, MS_PER_HOUR, humanizeDuration } from '../helpers/time-formats.js';
 
 var defaultConfig = {
@@ -29,9 +29,9 @@ function apiMessages(state = {}, action) {
    }
 }
 
-function user(state = {}, action) {
+function session(state = {}, action) {
    switch (action.type) {
-      case RECEIVE_USER:
+      case RECEIVE_SESSION:
          return action.data;
       default:
          return state;
@@ -77,7 +77,7 @@ const sleepApp = combineReducers({
    sleepEvents,
    sleepForm,
    config,
-   user
+   session
 })
 
 export default sleepApp
