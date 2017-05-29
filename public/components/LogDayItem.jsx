@@ -127,6 +127,7 @@ export default class LogDayItem extends Component {
   		};
 
 		this.handleToggleExpand = this.handleToggleExpand.bind(this);
+		this.update = this.update.bind(this);
 	}
 
 	static getPlaceholderHeight() {
@@ -134,7 +135,15 @@ export default class LogDayItem extends Component {
   	}
 
 	componentWillMount() {
-		const { data } = this.props.day;
+		this.update(this.props);
+	}
+
+	componentWillReceiveProps(nextProps) {
+		this.update(nextProps);
+	}
+
+	update(props) {
+		const { data } = props.day;
 
 		const sleepData = data
 			.map(o => {

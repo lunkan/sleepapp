@@ -5434,7 +5434,7 @@ module.exports = emptyFunction;
 
 var _prodInvariant = __webpack_require__(43);
 
-var ReactCurrentOwner = __webpack_require__(30);
+var ReactCurrentOwner = __webpack_require__(31);
 
 var invariant = __webpack_require__(11);
 var warning = __webpack_require__(12);
@@ -5940,6 +5940,351 @@ $exports.store = store;
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.SAVE_SLEEP_FORM = exports.DELETE_SLEEP_EVENT = exports.UPDATE_SLEEP_EVENT = exports.INSERT_SLEEP_EVENT = exports.RECEIVE_SLEEP_EVENT = exports.SET_CONFIG = exports.RECEIVE_SESSION = exports.CLEAR_API_MESSAGE = exports.SET_API_MESSAGE = undefined;
+exports.clearApiMessage = clearApiMessage;
+exports.fetchSession = fetchSession;
+exports.createUser = createUser;
+exports.login = login;
+exports.logout = logout;
+exports.setFilter = setFilter;
+exports.fetchSleepEvents = fetchSleepEvents;
+exports.addSleepEvent = addSleepEvent;
+exports.updateSleepEvent = updateSleepEvent;
+exports.deleteSleepEvent = deleteSleepEvent;
+exports.saveSleepForm = saveSleepForm;
+
+var _moment = __webpack_require__(2);
+
+var _moment2 = _interopRequireDefault(_moment);
+
+var _SleepEvent = __webpack_require__(100);
+
+var _SleepEvent2 = _interopRequireDefault(_SleepEvent);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var SET_API_MESSAGE = exports.SET_API_MESSAGE = 'SET_API_MESSAGE';
+var CLEAR_API_MESSAGE = exports.CLEAR_API_MESSAGE = 'CLEAR_API_MESSAGE';
+var RECEIVE_SESSION = exports.RECEIVE_SESSION = 'RECEIVE_SESSION';
+var SET_CONFIG = exports.SET_CONFIG = 'SET_CONFIG';
+var RECEIVE_SLEEP_EVENT = exports.RECEIVE_SLEEP_EVENT = 'RECEIVE_SLEEP_EVENT';
+var INSERT_SLEEP_EVENT = exports.INSERT_SLEEP_EVENT = 'INSERT_SLEEP_EVENT';
+var UPDATE_SLEEP_EVENT = exports.UPDATE_SLEEP_EVENT = 'UPDATE_SLEEP_EVENT';
+var DELETE_SLEEP_EVENT = exports.DELETE_SLEEP_EVENT = 'DELETE_SLEEP_EVENT';
+var SAVE_SLEEP_FORM = exports.SAVE_SLEEP_FORM = 'SAVE_SLEEP_FORM';
+
+function setApiMessage(id, messages) {
+	return {
+		type: SET_API_MESSAGE,
+		id: id,
+		data: messages
+	};
+}
+
+function clearApiMessage(id) {
+	return {
+		type: CLEAR_API_MESSAGE,
+		id: id
+	};
+}
+
+function receiveSession(session) {
+	return {
+		type: RECEIVE_SESSION,
+		data: session
+	};
+}
+
+function setSession(session) {
+	return function (dispatch) {
+		dispatch(receiveSession(session));
+
+		if (session.isAuthenticated) {
+			dispatch(fetchSleepEvents());
+		}
+	};
+}
+
+function fetchSession() {
+	return function (dispatch) {
+
+		return fetch('/api/session', {
+			credentials: 'include'
+		}).then(function (response) {
+			return response.json();
+		}).then(function (session) {
+			return dispatch(setSession(session));
+		});
+	};
+}
+
+function createUser(username, password, repassword) {
+	return function (dispatch) {
+
+		var credentials = {
+			"username": username,
+			"password": password,
+			"repassword": repassword
+		};
+
+		return fetch('/api/user', {
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			method: "POST",
+			credentials: 'include',
+			body: JSON.stringify(credentials)
+		}).then(function (response) {
+			switch (response.status) {
+				case 200:
+					return response.json().then(function (session) {
+						return dispatch(setSession(session));
+					});
+
+				default:
+					return response.json().then(function (errors) {
+						return dispatch(setApiMessage('createUser', errors));
+					});
+			}
+		});
+	};
+}
+
+function login(username, password) {
+	return function (dispatch) {
+
+		var credentials = {
+			"username": username,
+			"password": password
+		};
+
+		return fetch('/api/session', {
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			method: "POST",
+			credentials: 'include',
+			body: JSON.stringify(credentials)
+		}).then(function (response) {
+			switch (response.status) {
+				case 200:
+					return response.json().then(function (session) {
+						return dispatch(setSession(session));
+					});
+
+				default:
+					return response.json().then(function (json) {
+						return dispatch(setApiMessage('login', json));
+					});
+			}
+		});
+	};
+}
+
+function logout() {
+	return function (dispatch) {
+		return fetch('/api/session', {
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			method: "DELETE",
+			credentials: 'include'
+		}).then(function (response) {
+			return response.json().then(function (session) {
+				return dispatch(setSession(session));
+			});
+		});
+	};
+}
+
+function setFilter(type, from, to) {
+
+	var filter = {
+		type: type
+	};
+
+	switch (type) {
+		case 'week':
+			filter.to = (0, _moment2.default)();
+			filter.from = filter.to.clone().subtract(1, 'week');
+			break;
+		case 'month':
+			filter.to = (0, _moment2.default)();
+			filter.from = filter.to.clone().subtract(1, 'month');
+			break;
+		case 'year':
+			filter.to = (0, _moment2.default)();
+			filter.from = filter.to.clone().subtract(1, 'year');
+		case 'custom':
+			filter.to = to;
+			filter.from = from;
+			break;
+		default:
+			//All
+			filter.from = undefined;
+			filter.to = undefined;
+			break;
+
+	}
+	return {
+		type: SET_CONFIG,
+		data: {
+			eventFilter: filter
+		}
+	};
+}
+
+function receiveEvents(json) {
+	return {
+		type: RECEIVE_SLEEP_EVENT,
+		data: json.map(function (model) {
+			return new _SleepEvent2.default(model.id, model.preSleep, model.sleep, model.wakeUp);
+		})
+	};
+}
+
+function insertSleepData(models) {
+	return {
+		type: INSERT_SLEEP_EVENT,
+		data: models.map(function (model) {
+			return new _SleepEvent2.default(model.id, model.preSleep, model.sleep, model.wakeUp);
+		})
+	};
+}
+
+function updateSleepData(models) {
+	return {
+		type: UPDATE_SLEEP_EVENT,
+		data: models.map(function (model) {
+			return new _SleepEvent2.default(model.id, model.preSleep, model.sleep, model.wakeUp);
+		})
+	};
+}
+
+function deleteSleepData(id) {
+	return {
+		type: DELETE_SLEEP_EVENT,
+		data: id
+	};
+}
+
+function fetchSleepEvents() {
+	return function (dispatch) {
+		return fetch('/api/sleep', {
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			//cache: "no-store",
+			method: "GET",
+			credentials: 'include'
+		}).then(function (response) {
+			return response.json();
+		}).then(function (json) {
+			return dispatch(receiveEvents(json));
+		});
+	};
+}
+
+function addSleepEvent(data) {
+	return function (dispatch) {
+		console.log('addSleepEvent');
+		return fetch('/api/sleep', {
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			method: "POST",
+			credentials: 'include',
+			body: JSON.stringify(data)
+		}).then(function (response) {
+			return response.json();
+		}).then(function (models) {
+			return dispatch(insertSleepData(models));
+		});
+	};
+}
+
+function updateSleepEvent(id, data) {
+	return function (dispatch) {
+		return fetch('/api/sleep/' + id, {
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			method: "PUT",
+			credentials: 'include',
+			body: JSON.stringify(data)
+		}).then(function (response) {
+			return response.json();
+		}).then(function (model) {
+			return dispatch(updateSleepData([model]));
+		});
+	};
+}
+
+function deleteSleepEvent(id) {
+	return function (dispatch) {
+		return fetch('/api/sleep/' + id, {
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			method: "DELETE",
+			credentials: 'include'
+		}).then(function (response) {
+			return response.json();
+		}).then(function (response) {
+			return dispatch(deleteSleepData(response.id));
+		});
+	};
+}
+
+function saveSleepForm(formData) {
+	var id = formData.id,
+	    date = formData.date,
+	    sleepTime = formData.sleepTime,
+	    endTime = formData.endTime,
+	    preSleepDuration = formData.preSleepDuration;
+
+
+	var baseMoment = (0, _moment2.default)(date).startOf('day');
+	var sleepMoment = baseMoment.clone().hour(sleepTime.getHours()).minute(sleepTime.getMinutes());
+	var endMoment = baseMoment.clone().hour(endTime.getHours()).minute(endTime.getMinutes());
+	var startMoment = sleepMoment.clone().subtract(parseInt(preSleepDuration || 0), 'minutes');
+
+	//End time may fall into next day (if less hours than sleep)
+	if (sleepTime.getHours() > endTime.getHours() || sleepTime.getHours() === endTime.getHours() && sleepTime.getMinutes() > endTime.getMinutes()) {
+		endMoment.add(1, 'day');
+	}
+
+	var parsedData = {
+		id: id,
+		preSleep: startMoment.format(),
+		sleep: sleepMoment.format(),
+		wakeUp: endMoment.format()
+	};
+
+	if (id) {
+		return updateSleepEvent(id, parsedData);
+	} else {
+		return addSleepEvent(parsedData);
+	}
+}
+
+/***/ }),
+/* 30 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
 /* WEBPACK VAR INJECTION */(function(process) {/**
  * Copyright 2013-present, Facebook, Inc.
  * All rights reserved.
@@ -6193,7 +6538,7 @@ module.exports = ReactUpdates;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6227,319 +6572,6 @@ var ReactCurrentOwner = {
 };
 
 module.exports = ReactCurrentOwner;
-
-/***/ }),
-/* 31 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-exports.SAVE_SLEEP_FORM = exports.RECEIVE_SLEEP_EVENT = exports.SET_CONFIG = exports.RECEIVE_SESSION = exports.CLEAR_API_MESSAGE = exports.SET_API_MESSAGE = undefined;
-exports.clearApiMessage = clearApiMessage;
-exports.fetchSession = fetchSession;
-exports.createUser = createUser;
-exports.login = login;
-exports.logout = logout;
-exports.setFilter = setFilter;
-exports.receiveEvents = receiveEvents;
-exports.fetchSleepEvents = fetchSleepEvents;
-exports.addSleepEvent = addSleepEvent;
-exports.updateSleepEvent = updateSleepEvent;
-exports.deleteSleepEvent = deleteSleepEvent;
-exports.saveSleepForm = saveSleepForm;
-
-var _moment = __webpack_require__(2);
-
-var _moment2 = _interopRequireDefault(_moment);
-
-var _SleepEvent = __webpack_require__(100);
-
-var _SleepEvent2 = _interopRequireDefault(_SleepEvent);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var SET_API_MESSAGE = exports.SET_API_MESSAGE = 'SET_API_MESSAGE';
-var CLEAR_API_MESSAGE = exports.CLEAR_API_MESSAGE = 'CLEAR_API_MESSAGE';
-var RECEIVE_SESSION = exports.RECEIVE_SESSION = 'RECEIVE_SESSION';
-var SET_CONFIG = exports.SET_CONFIG = 'SET_CONFIG';
-var RECEIVE_SLEEP_EVENT = exports.RECEIVE_SLEEP_EVENT = 'RECEIVE_SLEEP_EVENT';
-var SAVE_SLEEP_FORM = exports.SAVE_SLEEP_FORM = 'SAVE_SLEEP_FORM';
-
-function setApiMessage(id, messages) {
-	return {
-		type: SET_API_MESSAGE,
-		id: id,
-		data: messages
-	};
-}
-
-function clearApiMessage(id) {
-	return {
-		type: CLEAR_API_MESSAGE,
-		id: id
-	};
-}
-
-function receiveSession(session) {
-	return {
-		type: RECEIVE_SESSION,
-		data: session
-	};
-}
-
-function setSession(session) {
-	return function (dispatch) {
-		dispatch(receiveSession(session));
-
-		if (session.isAuthenticated) {
-			dispatch(fetchSleepEvents());
-		}
-	};
-}
-
-function fetchSession() {
-	return function (dispatch) {
-
-		return fetch('/api/session', {
-			credentials: 'include'
-		}).then(function (response) {
-			return response.json();
-		}).then(function (session) {
-			return dispatch(setSession(session));
-		});
-	};
-}
-
-function createUser(username, password, repassword) {
-	return function (dispatch) {
-
-		var credentials = {
-			"username": username,
-			"password": password,
-			"repassword": repassword
-		};
-
-		return fetch('/api/user', {
-			headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-			method: "POST",
-			credentials: 'include',
-			body: JSON.stringify(credentials)
-		}).then(function (response) {
-			switch (response.status) {
-				case 200:
-					return response.json().then(function (session) {
-						return dispatch(setSession(session));
-					});
-
-				default:
-					return response.json().then(function (errors) {
-						return dispatch(setApiMessage('createUser', errors));
-					});
-			}
-		});
-	};
-}
-
-function login(username, password) {
-	return function (dispatch) {
-
-		var credentials = {
-			"username": username,
-			"password": password
-		};
-
-		return fetch('/api/session', {
-			headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-			method: "POST",
-			credentials: 'include',
-			body: JSON.stringify(credentials)
-		}).then(function (response) {
-			switch (response.status) {
-				case 200:
-					return response.json().then(function (session) {
-						return dispatch(setSession(session));
-					});
-
-				default:
-					return response.json().then(function (json) {
-						return dispatch(setApiMessage('login', json));
-					});
-			}
-		});
-	};
-}
-
-function logout() {
-	return function (dispatch) {
-		return fetch('/api/session', {
-			headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-			method: "DELETE",
-			credentials: 'include'
-		}).then(function (response) {
-			return response.json().then(function (session) {
-				return dispatch(setSession(session));
-			});
-		});
-	};
-}
-
-function setFilter(type, from, to) {
-
-	var filter = {
-		type: type
-	};
-
-	switch (type) {
-		case 'week':
-			filter.to = (0, _moment2.default)();
-			filter.from = filter.to.clone().subtract(1, 'week');
-			break;
-		case 'month':
-			filter.to = (0, _moment2.default)();
-			filter.from = filter.to.clone().subtract(1, 'month');
-			break;
-		case 'year':
-			filter.to = (0, _moment2.default)();
-			filter.from = filter.to.clone().subtract(1, 'year');
-		case 'custom':
-			filter.to = to;
-			filter.from = from;
-			break;
-		default:
-			//All
-			filter.from = undefined;
-			filter.to = undefined;
-			break;
-
-	}
-	return {
-		type: SET_CONFIG,
-		data: {
-			eventFilter: filter
-		}
-	};
-}
-
-function receiveEvents(json) {
-	return {
-		type: RECEIVE_SLEEP_EVENT,
-		events: json.data.map(function (event) {
-			return new _SleepEvent2.default(event.id, event.startTime, event.sleepTime, event.endTime);
-		})
-	};
-}
-
-function fetchSleepEvents() {
-	return function (dispatch) {
-		return fetch('/api/sleep-event').then(function (response) {
-			return response.json();
-		}).then(function (json) {
-			return dispatch(receiveEvents(json));
-		});
-	};
-}
-
-function addSleepEvent(data) {
-	return function (dispatch) {
-
-		var newSleepEvent = {
-			"startTime": data.startTime.format('YYYY-MM-DD HH:mm'),
-			"sleepTime": data.sleepTime.format('YYYY-MM-DD HH:mm'),
-			"endTime": data.endTime.format('YYYY-MM-DD HH:mm')
-		};
-
-		return fetch('/api/sleep-event', {
-			headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-			method: "POST",
-			body: JSON.stringify(newSleepEvent)
-		}).then(function (resp) {
-			return dispatch(fetchSleepEvents());
-		});
-	};
-}
-
-function updateSleepEvent(id, data) {
-	return function (dispatch) {
-
-		var updatedSleepEvent = {
-			"startTime": data.startTime.format('YYYY-MM-DD HH:mm'),
-			"sleepTime": data.sleepTime.format('YYYY-MM-DD HH:mm'),
-			"endTime": data.endTime.format('YYYY-MM-DD HH:mm')
-		};
-
-		return fetch('/api/sleep-event/' + id, {
-			headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-			method: "PUT",
-			body: JSON.stringify(updatedSleepEvent)
-		}).then(function (resp) {
-			return dispatch(fetchSleepEvents());
-		});
-	};
-}
-
-function deleteSleepEvent(id) {
-	return function (dispatch) {
-		return fetch('/api/sleep-event/' + id, {
-			headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-			method: "Delete"
-		}).then(function (resp) {
-			return dispatch(fetchSleepEvents());
-		});
-	};
-}
-
-function saveSleepForm(formData) {
-	var id = formData.id,
-	    date = formData.date,
-	    sleepTime = formData.sleepTime,
-	    endTime = formData.endTime,
-	    preSleepDuration = formData.preSleepDuration;
-
-
-	var baseMoment = (0, _moment2.default)(date).startOf('day');
-	var sleepMoment = baseMoment.clone().hour(sleepTime.getHours()).minute(sleepTime.getMinutes());
-	var endMoment = baseMoment.clone().hour(endTime.getHours()).minute(endTime.getMinutes());
-	var startMoment = sleepMoment.clone().subtract(parseInt(preSleepDuration || 0), 'minutes');
-
-	//End time may fall into next day (if less hours than sleep)
-	if (sleepTime.getHours() > endTime.getHours() || sleepTime.getHours() === endTime.getHours() && sleepTime.getMinutes() > endTime.getMinutes()) {
-		endMoment.add(1, 'day');
-	}
-
-	var parsedData = {
-		startTime: startMoment,
-		sleepTime: sleepMoment,
-		endTime: endMoment
-	};
-
-	if (id) {
-		return updateSleepEvent(id, parsedData);
-	} else {
-		return addSleepEvent(parsedData);
-	}
-}
 
 /***/ }),
 /* 32 */
@@ -7919,7 +7951,7 @@ module.exports = DOMProperty;
 
 var _assign = __webpack_require__(16);
 
-var ReactCurrentOwner = __webpack_require__(30);
+var ReactCurrentOwner = __webpack_require__(31);
 
 var warning = __webpack_require__(12);
 var canDefineProperty = __webpack_require__(153);
@@ -12821,7 +12853,7 @@ var _DatePicker = __webpack_require__(187);
 
 var _DatePicker2 = _interopRequireDefault(_DatePicker);
 
-var _actions = __webpack_require__(31);
+var _actions = __webpack_require__(29);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -15204,10 +15236,10 @@ module.exports = ReactErrorUtils;
 
 var _prodInvariant = __webpack_require__(13);
 
-var ReactCurrentOwner = __webpack_require__(30);
+var ReactCurrentOwner = __webpack_require__(31);
 var ReactInstanceMap = __webpack_require__(79);
 var ReactInstrumentation = __webpack_require__(26);
-var ReactUpdates = __webpack_require__(29);
+var ReactUpdates = __webpack_require__(30);
 
 var invariant = __webpack_require__(11);
 var warning = __webpack_require__(12);
@@ -31779,7 +31811,7 @@ var _assign = __webpack_require__(16);
 
 var LinkedValueUtils = __webpack_require__(135);
 var ReactDOMComponentTree = __webpack_require__(18);
-var ReactUpdates = __webpack_require__(29);
+var ReactUpdates = __webpack_require__(30);
 
 var warning = __webpack_require__(12);
 
@@ -32252,7 +32284,7 @@ var DOMLazyTree = __webpack_require__(62);
 var DOMProperty = __webpack_require__(41);
 var React = __webpack_require__(53);
 var ReactBrowserEventEmitter = __webpack_require__(92);
-var ReactCurrentOwner = __webpack_require__(30);
+var ReactCurrentOwner = __webpack_require__(31);
 var ReactDOMComponentTree = __webpack_require__(18);
 var ReactDOMContainerInfo = __webpack_require__(638);
 var ReactDOMFeatureFlags = __webpack_require__(640);
@@ -32262,7 +32294,7 @@ var ReactInstrumentation = __webpack_require__(26);
 var ReactMarkupChecksum = __webpack_require__(660);
 var ReactReconciler = __webpack_require__(65);
 var ReactUpdateQueue = __webpack_require__(138);
-var ReactUpdates = __webpack_require__(29);
+var ReactUpdates = __webpack_require__(30);
 
 var emptyObject = __webpack_require__(72);
 var instantiateReactComponent = __webpack_require__(326);
@@ -33280,7 +33312,7 @@ module.exports = setTextContent;
 
 var _prodInvariant = __webpack_require__(13);
 
-var ReactCurrentOwner = __webpack_require__(30);
+var ReactCurrentOwner = __webpack_require__(31);
 var REACT_ELEMENT_TYPE = __webpack_require__(654);
 
 var getIteratorFn = __webpack_require__(688);
@@ -34629,7 +34661,7 @@ module.exports = REACT_ELEMENT_TYPE;
 
 
 
-var ReactCurrentOwner = __webpack_require__(30);
+var ReactCurrentOwner = __webpack_require__(31);
 var ReactComponentTreeHook = __webpack_require__(22);
 var ReactElement = __webpack_require__(42);
 
@@ -34886,7 +34918,7 @@ module.exports = ReactPropTypesSecret;
 
 var _prodInvariant = __webpack_require__(43);
 
-var ReactCurrentOwner = __webpack_require__(30);
+var ReactCurrentOwner = __webpack_require__(31);
 var REACT_ELEMENT_TYPE = __webpack_require__(339);
 
 var getIteratorFn = __webpack_require__(154);
@@ -35450,7 +35482,7 @@ var _reactRedux = __webpack_require__(25);
 
 var _reactRouterDom = __webpack_require__(44);
 
-var _actions = __webpack_require__(31);
+var _actions = __webpack_require__(29);
 
 var _TopMenuBar = __webpack_require__(365);
 
@@ -35491,6 +35523,26 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var styleMainContainer = {
+	paddingTop: 64,
+	paddingBottom: 56
+};
+
+var styleTopMenuBar = {
+	position: 'fixed',
+	left: 0,
+	top: 0,
+	right: 0
+};
+
+var styleBottomMenuBar = {
+	zIndex: 1,
+	position: 'fixed',
+	left: 0,
+	bottom: 0,
+	right: 0
+};
 
 var App = function (_React$Component) {
 	_inherits(App, _React$Component);
@@ -35548,25 +35600,13 @@ var App = function (_React$Component) {
 				);
 			};
 
-			var appStyle = {
-				height: '100vh',
-				display: 'flex',
-				flexDirection: 'column'
-			};
-
-			var contentStyle = {
-				flexGrow: 1,
-				flexShrink: 1,
-				overflowY: 'scroll'
-			};
-
 			return _react2.default.createElement(
 				'div',
-				{ style: appStyle },
-				_react2.default.createElement(_TopMenuBar2.default, null),
+				null,
+				_react2.default.createElement(_TopMenuBar2.default, { style: styleTopMenuBar }),
 				_react2.default.createElement(
 					'div',
-					{ style: contentStyle },
+					{ style: styleMainContainer },
 					_react2.default.createElement(
 						_reactRouterDom.Switch,
 						{ location: isModal ? this.previousLocation : location },
@@ -35578,7 +35618,7 @@ var App = function (_React$Component) {
 					),
 					isModal ? _react2.default.createElement(ModalRoutes, null) : null
 				),
-				_react2.default.createElement(_BottomMenuBar2.default, null)
+				_react2.default.createElement(_BottomMenuBar2.default, { style: styleBottomMenuBar })
 			);
 		}
 	}]);
@@ -35607,7 +35647,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _redux = __webpack_require__(98);
 
-var _actions = __webpack_require__(31);
+var _actions = __webpack_require__(29);
 
 var _timeFormats = __webpack_require__(68);
 
@@ -35672,7 +35712,24 @@ function sleepEvents() {
 
    switch (action.type) {
       case _actions.RECEIVE_SLEEP_EVENT:
-         return action.events;
+         return action.data;
+
+      case _actions.INSERT_SLEEP_EVENT:
+         return state.concat(action.data);
+
+      case _actions.UPDATE_SLEEP_EVENT:
+         return state.reduce(function (acc, next, i) {
+            var updatedModel = action.data.filter(function (model) {
+               return model.id === next.id;
+            });
+            acc.push(updatedModel[0] || next);
+            return acc;
+         }, []);
+
+      case _actions.DELETE_SLEEP_EVENT:
+         return state.filter(function (model) {
+            return model.id !== action.data;
+         });
 
       default:
          return state;
@@ -36380,7 +36437,9 @@ var BottomMenuBar = function (_React$Component) {
 	_createClass(BottomMenuBar, [{
 		key: 'render',
 		value: function render() {
-			var session = this.props.session;
+			var _props = this.props,
+			    session = _props.session,
+			    style = _props.style;
 
 
 			if (!session.isAuthenticated) {
@@ -36389,7 +36448,7 @@ var BottomMenuBar = function (_React$Component) {
 
 			return _react2.default.createElement(
 				_Paper2.default,
-				{ zDepth: 1 },
+				{ style: style, zDepth: 1 },
 				_react2.default.createElement(
 					_BottomNavigation.BottomNavigation,
 					null,
@@ -36481,6 +36540,8 @@ var _Subheader = __webpack_require__(192);
 
 var _Subheader2 = _interopRequireDefault(_Subheader);
 
+var _actions = __webpack_require__(29);
+
 var _timeFormats = __webpack_require__(68);
 
 var _PageHeader = __webpack_require__(99);
@@ -36506,6 +36567,8 @@ var Config = function (_Component) {
 		_this.state = {};
 
 		_this.handleExport = _this.handleExport.bind(_this);
+		_this.handleImport = _this.handleImport.bind(_this);
+		_this.handleFileUpload = _this.handleFileUpload.bind(_this);
 		return _this;
 	}
 
@@ -36520,7 +36583,7 @@ var Config = function (_Component) {
 					id: e.id,
 					preSleep: e.preSleep.format(),
 					sleep: e.sleep.format(),
-					wakeup: e.wakeup.format()
+					wakeUp: e.wakeup.format()
 				};
 			});
 
@@ -36529,6 +36592,27 @@ var Config = function (_Component) {
 			anchorElem.setAttribute('href', dataStr);
 			anchorElem.setAttribute('download', 'sleeplog.json');
 			anchorElem.click();
+		}
+	}, {
+		key: 'handleImport',
+		value: function handleImport() {
+			this.refs.importAnchorElem.click();
+		}
+	}, {
+		key: 'handleFileUpload',
+		value: function handleFileUpload(_ref) {
+			var files = _ref.files;
+			var dispatch = this.props.dispatch;
+
+			var file = this.refs.importAnchorElem.files[0];
+
+			var reader = new FileReader();
+			reader.onload = function (e) {
+				var models = JSON.parse(e.target.result);
+				dispatch((0, _actions.addSleepEvent)(models));
+			};
+
+			reader.readAsText(file);
 		}
 	}, {
 		key: 'render',
@@ -36562,7 +36646,10 @@ var Config = function (_Component) {
 					),
 					_react2.default.createElement(_List.ListItem, { onTouchTap: function onTouchTap(e) {
 							return _this2.handleExport();
-						}, leftIcon: _react2.default.createElement(_fileDownload2.default, null), primaryText: 'Export sleep log', secondaryText: sizeReportText })
+						}, leftIcon: _react2.default.createElement(_fileDownload2.default, null), primaryText: 'Export sleep log', secondaryText: sizeReportText }),
+					_react2.default.createElement(_List.ListItem, { onTouchTap: function onTouchTap(e) {
+							return _this2.handleImport();
+						}, leftIcon: _react2.default.createElement(_fileDownload2.default, null), primaryText: 'Import sleep log', secondaryText: 'JSON files only' })
 				),
 				_react2.default.createElement(_Divider2.default, null),
 				_react2.default.createElement(
@@ -36590,7 +36677,8 @@ var Config = function (_Component) {
 					_react2.default.createElement(_List.ListItem, { leftIcon: _react2.default.createElement(_settings2.default, null), primaryText: 'Trend points to display', secondaryText: durationTrendIntervalLabel }),
 					_react2.default.createElement(_List.ListItem, { leftIcon: _react2.default.createElement(_settings2.default, null), primaryText: 'Trend points max', secondaryText: durationTrendIntervalMaxLabel })
 				),
-				_react2.default.createElement('a', { ref: 'exportAnchorElem', style: { display: "none" } })
+				_react2.default.createElement('a', { ref: 'exportAnchorElem', style: { display: "none" } }),
+				_react2.default.createElement('input', { onChange: this.handleFileUpload, type: 'file', ref: 'importAnchorElem', style: { display: "none" } })
 			);
 		}
 	}]);
@@ -36636,7 +36724,7 @@ var _RaisedButton = __webpack_require__(86);
 
 var _RaisedButton2 = _interopRequireDefault(_RaisedButton);
 
-var _actions = __webpack_require__(31);
+var _actions = __webpack_require__(29);
 
 var _MessageBox = __webpack_require__(157);
 
@@ -36907,15 +36995,21 @@ function select(state) {
 	    to = _state$config$eventFi.to;
 	var sleepEvents = state.sleepEvents;
 
+	//console.log('select', sleepEvents);
+
 	var selectedEvents = sleepEvents.filter(function (e) {
 		return e.intersect(from, to);
+	})
+
+	//Sort by sleep
+	.sort(function (a, b) {
+		return a.sleep.diff(b.sleep);
 	})
 
 	//Format data and fill time gaps between sleep events with active events
 	//If active time not considered incomplete (missing data) 
 	.reduce(function (acc, next) {
-		var preEvent = acc.last(); //(acc.last() || {});
-
+		var preEvent = acc.last();
 		//Ignore if active time start/end is not same day or to long
 		if (preEvent && preEvent.type === 'sleep' && next.sleep.date() === preEvent.data[0].wakeup.date()) {
 
@@ -37159,13 +37253,24 @@ var LogDayItem = function (_Component) {
 		};
 
 		_this.handleToggleExpand = _this.handleToggleExpand.bind(_this);
+		_this.update = _this.update.bind(_this);
 		return _this;
 	}
 
 	_createClass(LogDayItem, [{
 		key: 'componentWillMount',
 		value: function componentWillMount() {
-			var data = this.props.day.data;
+			this.update(this.props);
+		}
+	}, {
+		key: 'componentWillReceiveProps',
+		value: function componentWillReceiveProps(nextProps) {
+			this.update(nextProps);
+		}
+	}, {
+		key: 'update',
+		value: function update(props) {
+			var data = props.day.data;
 
 
 			var sleepData = data.map(function (o) {
@@ -37545,17 +37650,28 @@ var LogWeekItem = function (_Component) {
 		};
 
 		_this.onLazyLoaded = _this.onLazyLoaded.bind(_this);
+		_this.update = _this.update.bind(_this);
 		return _this;
 	}
 
 	_createClass(LogWeekItem, [{
 		key: 'componentWillMount',
 		value: function componentWillMount() {
-			var days = this.props.days;
+			this.update(this.props);
+		}
+	}, {
+		key: 'componentWillReceiveProps',
+		value: function componentWillReceiveProps(nextProps) {
+			this.update(nextProps);
+		}
+	}, {
+		key: 'update',
+		value: function update(props) {
+			var days = props.days;
 
 
 			this.setState({
-				containerHeight: days.length * _LogDayItem2.default.getPlaceholderHeight(),
+				containerHeight: this.state.loaded ? 'auto' : days.length * _LogDayItem2.default.getPlaceholderHeight(),
 				sortedDays: days.sort(function (a, b) {
 					return (0, _frozenMoment2.default)(b.key).diff((0, _frozenMoment2.default)(a.key));
 				})
@@ -37720,7 +37836,7 @@ var _RaisedButton = __webpack_require__(86);
 
 var _RaisedButton2 = _interopRequireDefault(_RaisedButton);
 
-var _actions = __webpack_require__(31);
+var _actions = __webpack_require__(29);
 
 var _MessageBox = __webpack_require__(157);
 
@@ -37883,7 +37999,7 @@ var _FlatButton = __webpack_require__(61);
 
 var _FlatButton2 = _interopRequireDefault(_FlatButton);
 
-var _actions = __webpack_require__(31);
+var _actions = __webpack_require__(29);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -38025,7 +38141,7 @@ var _TextField = __webpack_require__(77);
 
 var _TextField2 = _interopRequireDefault(_TextField);
 
-var _actions = __webpack_require__(31);
+var _actions = __webpack_require__(29);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -38237,22 +38353,72 @@ var Overview = function (_Component) {
 
 		_this.state = {
 			graphData: null,
-			timeSpan: null
+			timeSpan: null,
+			canvasHeight: 0,
+			canvasWidth: 0
 		};
 
+		_this.handleResize = _this.handleResize.bind(_this);
 		_this.drawGraph = _this.drawGraph.bind(_this);
+		//this.drawDummyGraph = this.drawDummyGraph.bind(this);
 		return _this;
 	}
 
 	_createClass(Overview, [{
+		key: 'componentWillUnmount',
+		value: function componentWillUnmount() {
+			window.removeEventListener('resize', this.handleResize);
+		}
+	}, {
 		key: 'componentDidMount',
 		value: function componentDidMount() {
+			this.handleResize();
+			window.addEventListener('resize', this.handleResize);
+
+			//this.drawDummyGraph();
 			this.drawGraph();
 		}
 	}, {
 		key: 'componentDidUpdate',
 		value: function componentDidUpdate() {
+			//this.drawDummyGraph();
 			this.drawGraph();
+		}
+	}, {
+		key: 'handleResize',
+		value: function handleResize(e) {
+			this.setState({
+				canvasHeight: window.innerHeight - 216,
+				canvasWidth: window.innerWidth - 40
+			});
+		}
+	}, {
+		key: 'drawDummyGraph',
+		value: function drawDummyGraph() {
+			//this.canvas;//
+			var ctx = document.getElementById("myChart");
+			var myChart = new _chart2.default(ctx, {
+				type: 'bar',
+				data: {
+					labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+					datasets: [{
+						label: '# of Votes',
+						data: [12, 19, 3, 5, 2, 3],
+						backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(255, 206, 86, 0.2)', 'rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)', 'rgba(255, 159, 64, 0.2)'],
+						borderColor: ['rgba(255,99,132,1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'],
+						borderWidth: 1
+					}]
+				},
+				options: {
+					scales: {
+						yAxes: [{
+							ticks: {
+								beginAtZero: true
+							}
+						}]
+					}
+				}
+			});
 		}
 	}, {
 		key: 'drawGraph',
@@ -38373,13 +38539,23 @@ var Overview = function (_Component) {
 		value: function render() {
 			var _this2 = this;
 
+			var _state = this.state,
+			    canvasHeight = _state.canvasHeight,
+			    canvasWidth = _state.canvasWidth;
+
+			var styleCanvasContainer = {
+				padding: 20,
+				width: canvasWidth,
+				height: canvasHeight
+			};
+
 			return _react2.default.createElement(
 				'div',
 				null,
 				_react2.default.createElement(_PageHeader2.default, { pageTitle: 'Graph' }),
 				_react2.default.createElement(
 					'div',
-					{ style: { margin: 20, height: '70vh' } },
+					{ style: styleCanvasContainer },
 					_react2.default.createElement('canvas', { ref: function ref(canvas) {
 							_this2.canvas = canvas;
 						}, width: '100%', height: '100%' })
@@ -38418,6 +38594,11 @@ function select(state) {
 	//Filter by timespan, or display all if not provided
 	sleepEvents.filter(function (e) {
 		return e.intersect(from, to);
+	})
+
+	//Sort by sleep
+	.sort(function (a, b) {
+		return a.sleep.diff(b.sleep);
 	})
 
 	//Split sleep-events that spans over 2 days
@@ -38543,7 +38724,7 @@ var _childCare = __webpack_require__(610);
 
 var _childCare2 = _interopRequireDefault(_childCare);
 
-var _actions = __webpack_require__(31);
+var _actions = __webpack_require__(29);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -38641,12 +38822,10 @@ var TopMenuBar = function (_React$Component2) {
 	_createClass(TopMenuBar, [{
 		key: 'render',
 		value: function render() {
-			var headStyle = {
-				flexGrow: 0,
-				flexShrink: 0
-			};
+			var style = this.props.style;
 
-			return _react2.default.createElement(_AppBar2.default, { style: headStyle, title: 'Sleep app',
+
+			return _react2.default.createElement(_AppBar2.default, { style: style, title: 'Sleep app',
 				iconElementLeft: _react2.default.createElement(
 					_IconButton2.default,
 					null,
@@ -74613,7 +74792,7 @@ var EventPluginHub = __webpack_require__(63);
 var EventPropagators = __webpack_require__(64);
 var ExecutionEnvironment = __webpack_require__(20);
 var ReactDOMComponentTree = __webpack_require__(18);
-var ReactUpdates = __webpack_require__(29);
+var ReactUpdates = __webpack_require__(30);
 var SyntheticEvent = __webpack_require__(33);
 
 var getEventTarget = __webpack_require__(143);
@@ -75739,7 +75918,7 @@ var _prodInvariant = __webpack_require__(13),
 
 var React = __webpack_require__(53);
 var ReactComponentEnvironment = __webpack_require__(136);
-var ReactCurrentOwner = __webpack_require__(30);
+var ReactCurrentOwner = __webpack_require__(31);
 var ReactErrorUtils = __webpack_require__(137);
 var ReactInstanceMap = __webpack_require__(79);
 var ReactInstrumentation = __webpack_require__(26);
@@ -76648,7 +76827,7 @@ var ReactDOMComponentTree = __webpack_require__(18);
 var ReactDefaultInjection = __webpack_require__(653);
 var ReactMount = __webpack_require__(319);
 var ReactReconciler = __webpack_require__(65);
-var ReactUpdates = __webpack_require__(29);
+var ReactUpdates = __webpack_require__(30);
 var ReactVersion = __webpack_require__(668);
 
 var findDOMNode = __webpack_require__(685);
@@ -77939,7 +78118,7 @@ var _prodInvariant = __webpack_require__(13),
 var DOMPropertyOperations = __webpack_require__(312);
 var LinkedValueUtils = __webpack_require__(135);
 var ReactDOMComponentTree = __webpack_require__(18);
-var ReactUpdates = __webpack_require__(29);
+var ReactUpdates = __webpack_require__(30);
 
 var invariant = __webpack_require__(11);
 var warning = __webpack_require__(12);
@@ -78886,7 +79065,7 @@ var _prodInvariant = __webpack_require__(13),
 
 var LinkedValueUtils = __webpack_require__(135);
 var ReactDOMComponentTree = __webpack_require__(18);
-var ReactUpdates = __webpack_require__(29);
+var ReactUpdates = __webpack_require__(30);
 
 var invariant = __webpack_require__(11);
 var warning = __webpack_require__(12);
@@ -79676,7 +79855,7 @@ module.exports = ReactDebugTool;
 
 var _assign = __webpack_require__(16);
 
-var ReactUpdates = __webpack_require__(29);
+var ReactUpdates = __webpack_require__(30);
 var Transaction = __webpack_require__(94);
 
 var emptyFunction = __webpack_require__(21);
@@ -79907,7 +80086,7 @@ var EventListener = __webpack_require__(176);
 var ExecutionEnvironment = __webpack_require__(20);
 var PooledClass = __webpack_require__(52);
 var ReactDOMComponentTree = __webpack_require__(18);
-var ReactUpdates = __webpack_require__(29);
+var ReactUpdates = __webpack_require__(30);
 
 var getEventTarget = __webpack_require__(143);
 var getUnboundedScrollPosition = __webpack_require__(472);
@@ -80107,7 +80286,7 @@ var ReactComponentEnvironment = __webpack_require__(136);
 var ReactEmptyComponent = __webpack_require__(315);
 var ReactBrowserEventEmitter = __webpack_require__(92);
 var ReactHostComponent = __webpack_require__(317);
-var ReactUpdates = __webpack_require__(29);
+var ReactUpdates = __webpack_require__(30);
 
 var ReactInjection = {
   Component: ReactComponentEnvironment.injection,
@@ -80243,7 +80422,7 @@ var ReactComponentEnvironment = __webpack_require__(136);
 var ReactInstanceMap = __webpack_require__(79);
 var ReactInstrumentation = __webpack_require__(26);
 
-var ReactCurrentOwner = __webpack_require__(30);
+var ReactCurrentOwner = __webpack_require__(31);
 var ReactReconciler = __webpack_require__(65);
 var ReactChildReconciler = __webpack_require__(633);
 
@@ -82822,7 +83001,7 @@ module.exports = dangerousStyleValue;
 
 var _prodInvariant = __webpack_require__(13);
 
-var ReactCurrentOwner = __webpack_require__(30);
+var ReactCurrentOwner = __webpack_require__(31);
 var ReactDOMComponentTree = __webpack_require__(18);
 var ReactInstanceMap = __webpack_require__(79);
 
@@ -88517,7 +88696,7 @@ var _reducers = __webpack_require__(348);
 
 var _reducers2 = _interopRequireDefault(_reducers);
 
-var _actions = __webpack_require__(31);
+var _actions = __webpack_require__(29);
 
 var _moment = __webpack_require__(2);
 

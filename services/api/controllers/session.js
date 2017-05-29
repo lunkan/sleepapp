@@ -29,7 +29,7 @@ router.route('/')
     				"errors": ["Username or password is not correct."]
     			});
 			} else {
-				req.session.user = user.username;
+				req.session.username = user.username;
 				req.session.isAuthenticated = true;
 				res.json(new Session(req.session).format());
 			}

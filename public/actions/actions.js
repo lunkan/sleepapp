@@ -7,6 +7,9 @@ export const CLEAR_API_MESSAGE = 'CLEAR_API_MESSAGE';
 export const RECEIVE_SESSION = 'RECEIVE_SESSION';
 export const SET_CONFIG = 'SET_CONFIG';
 export const RECEIVE_SLEEP_EVENT = 'RECEIVE_SLEEP_EVENT';
+export const INSERT_SLEEP_EVENT = 'INSERT_SLEEP_EVENT';
+export const UPDATE_SLEEP_EVENT = 'UPDATE_SLEEP_EVENT';
+export const DELETE_SLEEP_EVENT = 'DELETE_SLEEP_EVENT';
 export const SAVE_SLEEP_FORM = 'SAVE_SLEEP_FORM';
 
 function setApiMessage(id, messages) {
@@ -173,72 +176,101 @@ export function setFilter(type, from, to) {
 	}
 }
 
-export function receiveEvents(json) {
+function receiveEvents(json) {
 	return {
 		type: RECEIVE_SLEEP_EVENT,
-		events: json.data.map(event => 
-			new SleepEvent(event.id, event.startTime, event.sleepTime, event.endTime)
+		data: json.map(model => 
+			new SleepEvent(model.id, model.preSleep, model.sleep, model.wakeUp)
 		)	
+	}
+}
+
+function insertSleepData(models) {
+	return {
+		type: INSERT_SLEEP_EVENT,
+		data: models.map(model =>
+			new SleepEvent(model.id, model.preSleep, model.sleep, model.wakeUp)
+		)
+	}
+}
+
+function updateSleepData(models) {
+	return {
+		type: UPDATE_SLEEP_EVENT,
+		data: models.map(model =>
+			new SleepEvent(model.id, model.preSleep, model.sleep, model.wakeUp)
+		)
+	}
+}
+
+function deleteSleepData(id) {
+	return {
+		type: DELETE_SLEEP_EVENT,
+		data: id
 	}
 }
 
 export function fetchSleepEvents() {
 	return function (dispatch) {
-		return fetch('/api/sleep-event')
-	      .then(response => response.json())
-	      .then(json => dispatch(receiveEvents(json)))
+		return fetch('/api/sleep', {
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				//cache: "no-store",
+				method: "GET",
+				credentials: 'include'
+			})
+			.then(response => response.json())
+			.then(json => dispatch(receiveEvents(json)))
 	}
 }
 
 export function addSleepEvent(data) {
 	return function (dispatch) {
-
-		var newSleepEvent = {
-	      "startTime": data.startTime.format('YYYY-MM-DD HH:mm'),
-	      "sleepTime": data.sleepTime.format('YYYY-MM-DD HH:mm'),
-	      "endTime": data.endTime.format('YYYY-MM-DD HH:mm')
-	  	};
-
-		return fetch('/api/sleep-event', {
+		console.log('addSleepEvent');
+		return fetch('/api/sleep', {
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'
 			},
 			method: "POST",
-			body: JSON.stringify(newSleepEvent)
-		}).then(resp => dispatch(fetchSleepEvents()))
+			credentials: 'include',
+			body: JSON.stringify(data)
+		})
+		.then(response => response.json())
+		.then(models => dispatch(insertSleepData(models)));
 	}
 }
 
 export function updateSleepEvent(id, data) {
 	return function (dispatch) {
-
-		var updatedSleepEvent = {
-	      "startTime": data.startTime.format('YYYY-MM-DD HH:mm'),
-	      "sleepTime": data.sleepTime.format('YYYY-MM-DD HH:mm'),
-	      "endTime": data.endTime.format('YYYY-MM-DD HH:mm')
-	  	};
-
-		return fetch('/api/sleep-event/'+id, {
+		return fetch('/api/sleep/'+id, {
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'
 			},
 			method: "PUT",
-			body: JSON.stringify(updatedSleepEvent)
-		}).then(resp => dispatch(fetchSleepEvents()))
+			credentials: 'include',
+			body: JSON.stringify(data)
+		})
+		.then(response => response.json())
+		.then(model => dispatch(updateSleepData([model])));
 	}
 }
 
 export function deleteSleepEvent(id) {
 	return function (dispatch) {
-		return fetch('/api/sleep-event/'+id, {
+		return fetch('/api/sleep/'+id, {
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'
 			},
-			method: "Delete"
-		}).then(resp => dispatch(fetchSleepEvents()))
+			method: "DELETE",
+			credentials: 'include'
+		})
+		.then(response => response.json())
+		.then(response => dispatch(deleteSleepData(response.id)));
 	}
 }
 
@@ -256,11 +288,12 @@ export function saveSleepForm(formData) {
         endMoment.add(1, 'day');
     }
 
-	let parsedData = {
-        startTime: startMoment,
-        sleepTime: sleepMoment,
-        endTime: endMoment
-    }
+	var parsedData = {
+		id: id,
+        preSleep: startMoment.format(),
+        sleep: sleepMoment.format(),
+        wakeUp: endMoment.format()
+    };
 
 	if(id) {
 		return updateSleepEvent(id, parsedData);

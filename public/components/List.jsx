@@ -23,6 +23,7 @@ import LogWeekItem from './LogWeekItem.jsx';
 class EventLog extends Component {
 
 	render() {
+
 		const { sleepEvents } = this.props;
 
 		const infoBoxOuterStyle = {
@@ -56,13 +57,17 @@ class EventLog extends Component {
 function select(state) {
 	const { from, to } = state.config.eventFilter;
 	const { sleepEvents } = state;
+
+	//console.log('select', sleepEvents);
 	var selectedEvents = sleepEvents.filter(e => e.intersect(from, to))
+
+		//Sort by sleep
+		.sort((a, b) => a.sleep.diff(b.sleep))
 
 		//Format data and fill time gaps between sleep events with active events
 		//If active time not considered incomplete (missing data) 
 		.reduce((acc, next) => {
-			const preEvent = acc.last();//(acc.last() || {});
-
+			const preEvent = acc.last();
 			//Ignore if active time start/end is not same day or to long
 			if(preEvent
 				&& preEvent.type === 'sleep'

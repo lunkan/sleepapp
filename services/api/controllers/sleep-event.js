@@ -1,6 +1,7 @@
 'use strict';
 const datastore = require('../datastore.js');
 const express = require('express');
+const moment = require('moment');
 
 const router = express.Router();
 
@@ -37,12 +38,20 @@ router.route('/')
 	.get(function(req, res) {
 		const query = datastore.createQuery('sleepEvent').order('startTime');
 		datastore.runQuery(query).then((results) => {
-			const tasks = results[0];
-			tasks.forEach((task) => {
+			const models = results[0].map(model => ({
+				preSleep: moment(model.startTime).format(),
+				sleep: moment(model.sleepTime).format(),
+				wakeUp: moment(model.endTime).format()
+			}));
+
+			res.json(models);
+
+			/*tasks.forEach((task) => {
 				task.id = task[datastore.KEY].id;
 			});
 
-			res.json({ data: tasks });
+
+			res.json({ data: tasks });*/
 		});
 	});
 

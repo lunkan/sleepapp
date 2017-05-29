@@ -18,18 +18,80 @@ class Overview extends Component {
 
       this.state = {
       	graphData: null,
-      	timeSpan: null
+      	timeSpan: null,
+      	canvasHeight: 0,
+      	canvasWidth: 0
       }
 
-      this.drawGraph = this.drawGraph.bind(this);
+      	this.handleResize = this.handleResize.bind(this);
+		this.drawGraph = this.drawGraph.bind(this);
+      //this.drawDummyGraph = this.drawDummyGraph.bind(this);
    }
 
+
+    componentWillUnmount() {
+        window.removeEventListener('resize', this.handleResize)
+    }
+
 	componentDidMount() {
+		this.handleResize();
+		window.addEventListener('resize', this.handleResize)
+		
+		//this.drawDummyGraph();
 		this.drawGraph();
 	}
 
 	componentDidUpdate() {
+		//this.drawDummyGraph();
 		this.drawGraph();
+	}
+
+    handleResize(e) {
+        this.setState({
+	        canvasHeight: window.innerHeight - 216,
+	        canvasWidth: window.innerWidth - 40
+        });
+    }
+
+	drawDummyGraph() {
+		//this.canvas;//
+		var ctx = document.getElementById("myChart");
+		var myChart = new Chart(ctx, {
+		    type: 'bar',
+		    data: {
+		        labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+		        datasets: [{
+		            label: '# of Votes',
+		            data: [12, 19, 3, 5, 2, 3],
+		            backgroundColor: [
+		                'rgba(255, 99, 132, 0.2)',
+		                'rgba(54, 162, 235, 0.2)',
+		                'rgba(255, 206, 86, 0.2)',
+		                'rgba(75, 192, 192, 0.2)',
+		                'rgba(153, 102, 255, 0.2)',
+		                'rgba(255, 159, 64, 0.2)'
+		            ],
+		            borderColor: [
+		                'rgba(255,99,132,1)',
+		                'rgba(54, 162, 235, 1)',
+		                'rgba(255, 206, 86, 1)',
+		                'rgba(75, 192, 192, 1)',
+		                'rgba(153, 102, 255, 1)',
+		                'rgba(255, 159, 64, 1)'
+		            ],
+		            borderWidth: 1
+		        }]
+		    },
+		    options: {
+		        scales: {
+		            yAxes: [{
+		                ticks: {
+		                    beginAtZero:true
+		                }
+		            }]
+		        }
+		    }
+		});
 	}
 
 	drawGraph() {
@@ -159,10 +221,17 @@ class Overview extends Component {
 	}
 
 	render() {
+		const { canvasHeight, canvasWidth } = this.state;
+		const styleCanvasContainer = {
+			padding: 20,
+			width: canvasWidth,
+			height: canvasHeight
+		}
+		
 		return (
 			<div>
 				<PageHeader pageTitle="Graph"/>
-				<div style={{margin:20,height:'70vh'}}>
+				<div style={styleCanvasContainer}>
 					<canvas ref={(canvas) => { this.canvas = canvas; }} width="100%" height="100%"/>
 				</div>
 			</div>
@@ -197,6 +266,9 @@ function select(state) {
 
 	//Filter by timespan, or display all if not provided
 	sleepEvents.filter(e => e.intersect(from, to))
+
+		//Sort by sleep
+		.sort((a, b) => a.sleep.diff(b.sleep))
 
 		//Split sleep-events that spans over 2 days
 		.reduce((acc, e) => acc.concat(e.breakApart(dayBeginsAtHour)), [])

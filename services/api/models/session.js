@@ -3,7 +3,7 @@
 class SessionModel {
 
 	constructor(data) {
-		this.username = data.user || 'guest';
+		this.username = data.username || 'guest';
 		this.isAuthenticated = data.isAuthenticated === true;
 	}
 

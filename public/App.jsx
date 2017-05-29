@@ -15,6 +15,26 @@ import Config from './components/Config.jsx';
 import ModalDeleteSleepEvent from './components/ModalDeleteSleepEvent.jsx';
 import ModalSleepEvent from './components/ModalSleepEvent.jsx';
 
+const styleMainContainer = {
+	paddingTop: 64,
+	paddingBottom: 56
+};
+
+const styleTopMenuBar = {
+	position: 'fixed',
+	left: 0,
+	top: 0,
+	right: 0
+}
+
+const styleBottomMenuBar = {
+	zIndex: 1,
+	position: 'fixed',
+	left: 0,
+	bottom: 0,
+	right: 0
+}
+
 class App extends React.Component {
 
 	componentWillMount() {
@@ -59,22 +79,10 @@ class App extends React.Component {
 			</div>);
     	}
 
-		const appStyle = {
-	  		height: '100vh',
-	  		display: 'flex',
-	  		flexDirection: 'column'
-	  	};
-
-		const contentStyle = {
-	  		flexGrow: 1,
-	  		flexShrink: 1,
-	  		overflowY: 'scroll'
-	  	};
-
       	return (
-      		<div style={appStyle}>
-		    	<TopMenuBar/>
-		    	<div style={contentStyle}>
+      		<div>
+		    	<TopMenuBar style={styleTopMenuBar} />
+		    	<div style={styleMainContainer}>
 		    		<Switch location={isModal ? this.previousLocation : location}>
 		    			<Route exact path="/" component={session.isAuthenticated ? Graph : Login}/>
 						<Route path='/login' component={Login} />
@@ -84,7 +92,7 @@ class App extends React.Component {
 				  	</Switch>
 				  	{isModal ? <ModalRoutes/> : null}
 			  	</div>
-			  	<BottomMenuBar/>
+			  	<BottomMenuBar style={styleBottomMenuBar} />
 		    </div>
       	)
 	}

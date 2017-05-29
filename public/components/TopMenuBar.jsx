@@ -74,13 +74,10 @@ export default class TopMenuBar extends React.Component {
   	}
 
 	render() {
-   		const headStyle = {
-			flexGrow: 0,
-	  		flexShrink: 0
-	  	}
+		const { style } = this.props;
 
 	  	return (
-      		<AppBar style={headStyle} title={'Sleep app'}
+      		<AppBar style={style} title={'Sleep app'}
 		    	iconElementLeft={<IconButton><IconChildCare/></IconButton>}
 		    	iconElementRight={<UserMenuComponent/>} />
 		);

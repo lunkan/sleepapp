@@ -13,14 +13,14 @@ import IconSettings from 'material-ui/svg-icons/action/settings';
 class BottomMenuBar extends React.Component {
 
 	render() {
-   		const { session} = this.props;
+   		const { session, style } = this.props;
 
    		if(!session.isAuthenticated) {
 			return null;
 		}
 
       	return (
-      		<Paper zDepth={1}>
+      		<Paper style={style} zDepth={1}>
 		  		<BottomNavigation>
 	        		<BottomNavigationItem
 	            		label={<Link to="/graph">Graph</Link>}

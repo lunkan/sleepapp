@@ -31,13 +31,22 @@ export default class LogWeekItem extends Component {
 		}
 
 		this.onLazyLoaded = this.onLazyLoaded.bind(this);
+		this.update = this.update.bind(this);
 	}
 
 	componentWillMount() {
-		const { days } = this.props;
+		this.update(this.props);
+	}
+
+	componentWillReceiveProps(nextProps) {
+		this.update(nextProps);
+	}
+
+	update(props) {
+		const { days } = props;
 
 		this.setState({
-			containerHeight: days.length * LogDayItem.getPlaceholderHeight(),
+			containerHeight: this.state.loaded ? 'auto' : days.length * LogDayItem.getPlaceholderHeight(),
 			sortedDays: days.sort((a, b) => Moment(b.key).diff(Moment(a.key)))
 		});
 	}

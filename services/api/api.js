@@ -2,9 +2,10 @@
 const express = require('express');
 const sessionRouter = require('./controllers/session.js');
 const userRouter = require('./controllers/user.js');
+const sleepRouter = require('./controllers/sleep.js');
 
 //Deprecated
-const sleepRouter = require('./controllers/sleep-event.js');
+const sleepEventRouter = require('./controllers/sleep-event.js');
 
 const router = express.Router();
 
@@ -18,7 +19,8 @@ function Api(app) {
 
 	router.use('/user', userRouter);
 	router.use('/session', sessionRouter);
-	router.use('/sleep-event', sleepRouter);
+	router.use('/sleep', sleepRouter);
+	router.use('/sleep-event', sleepEventRouter);
 	app.use('/api', router);
 }
 

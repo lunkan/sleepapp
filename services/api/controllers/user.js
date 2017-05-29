@@ -46,7 +46,7 @@ router.route('/')
 
 				} else {
 					newUser.save().then(model => {
-						req.session.user = model.username;
+						req.session.username = model.username;
 						req.session.isAuthenticated = true;
 						res.json(new Session(req.session).format());
 					}).catch(e => {
@@ -93,7 +93,9 @@ router.route('/:username')
 
 	.delete(function(req, res) {
 		User.delete(req.params.username).then(username => {
-			res.sendStatus(200);
+			new Sleep(username).clearAll().then(() => {
+				res.sendStatus(200);
+			});
 		}).catch(e => {
 			res.status(e.status || 500);
 			res.json(e.message || 'Unhandled exception, check log.');

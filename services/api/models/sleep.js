@@ -1,128 +1,148 @@
 'use strict';
-const moment = require('moment');
 const ds = require('../datastore.js');
-const User = require('./User.js');
+const User = require('./user.js');
 
 const NAME = 'sleep';
 
 class SleepModelFactory {
 
 	constructor(session) {
-		this.keyPathRoot = [User.getName(), session.username, NAME];
+		this.ancestorPath = [User.getName(), session.username];
+		this.rand = Math.random();
+	}
+
+	getAncestorPath() {
+		//Must clone (immutable), or Google DS erase it.
+		return this.ancestorPath.concat([]);
 	}
 
 	getKey(id) {
-		const keyPath = id ? this.keyPathRoot.concat([id]) : this.keyPathRoot;
+		let keyPath = this.getAncestorPath().concat([NAME]);
+
+		//Ids are integers, but returned as values (strange Google!!!)
+		if(id) {
+			keyPath.push(parseInt(id)); 
+		}
+
 		return ds.key(keyPath); 
 	}
 
 	get(id) {
-		const key = getKey(id);
-		return ds.get(key).then((results) => {
-			return new SleepModel(results[0]));
+		const key = this.getKey(id);
+		return ds.get(key).then(results => {
+			return results[0];
 		});
 	}
 
 	list() {
-		const queryKey = getKey();
-		const query = ds.createQuery(NAME)
-			.filter('__key__', '>', queryKey);
-			.order('sleep');
+		const ancestorKey = ds.key(this.getAncestorPath());
+		const query = ds.createQuery(NAME).hasAncestor(ancestorKey);
 
 		return ds.runQuery(query).then((results) => {
-			return results[0].map(model => new SleepModel(model));
+			return results[0];
 		});	
 	}
 
-	update(id, data) {
-		const key = getKey(id);
-		return new SleepModel(data, key).save();
+	update(dataList) {
+		const entities = dataList.map(data => {
+			const key = this.getKey(data.id);
+			return {
+				key: key,
+				data: new SleepData(key, data).parse()
+			};
+		});
+
+		return ds.update(entities).then(result => 
+			entities.map(entity => entity.data)
+		);
 	}
 
-	create(data) {
-		const key = getKey();
-		return new SleepModel(data, key).save();
+	create(dataList) {
+		const ancestorKey = ds.key(this.getAncestorPath().concat([NAME]));
+
+		return ds.allocateIds(ancestorKey, dataList.length).then(result => {
+			const entities = result[0].map((key, i) => ({
+				key: key,
+				data: new SleepData(key, dataList[i]).parse()
+			}));
+
+			return ds.insert(entities).then(result => 
+				entities.map(entity => entity.data)
+			);
+		});
+	}
+
+	clearAll() {
+		const ancestorKey = ds.key(this.getAncestorPath());
+		const query = ds.createQuery(NAME).hasAncestor(ancestorKey);
+
+		return ds.runQuery(query).then((results) => {
+			const deleteKeys = results[0].map(model => model[ds.KEY]);
+			return ds.delete(deleteKeys);
+		});
 	}
 
 	delete(id) {
-		const key = getKey(id);
-		return ds.delete(key);
+		const key = this.getKey(id);
+		return ds.delete(key).then(result => {
+			return id;
+		});
 	}
 }
 
-class SleepModel {
+class SleepData {
 
-	constructor(data) {
-		//Store id to be tracked on client
-		this.id = data[ds.KEY] ? data[ds.KEY].id : undefined;
+	constructor(key, data) {
+		this.id = key.id.toString();
+		this.preSleep = new Date(data.preSleep);
+		this.sleep = new Date(data.sleep);
+		this.wakeUp = new Date(data.wakeUp);
+	}
 
-		//sleep data is either isoDate string or js Date
-		this.preSleep: moment(data.preSleep),
-		this.sleep: moment(data.preSleep),
-		this.wakeUp: moment(data.preSleep)
+	parse() {
+		if(this.isValid()) {
+			return {
+				id: this.id,
+				preSleep: this.preSleep,
+				sleep: this.sleep,
+				wakeUp: this.wakeUp,
+			}
+		} else {
+			throw {
+				name: 'ParseErrors',
+				status: 400,
+				message: {
+					fieldErrors: this.getFieldErrors()
+				}
+			};
+		}
 	}
 
 	isValid() {
-		return this.preSleep.isValid()
-			&& this.sleep.isValid()
-			&& this.wakeUp.isValid();
+		return this.id
+			&& !isNaN(this.preSleep.getTime())
+			&& !isNaN(this.sleep.getTime())
+			&& !isNaN(this.wakeUp.getTime());
 	}
 
 	getFieldErrors() {
 		var fieldErrors = {};
 
-		if(this.preSleep.isValid()) {
-			fieldErrors.preSleep = this.preSleep ? "Not a valid moment" : "Required";
+		if(!this.id) {
+			fieldErrors.preSleep = "Id Required";
 		}
-		if(this.sleep.isValid()) {
-			fieldErrors.sleep = this.sleep ? "Not a valid moment" : "Required";
+		if(isNaN(this.preSleep.getTime())) {
+			fieldErrors.preSleep = "Not a valid date";
 		}
-		if(this.wakeUp.isValid()) {
-			fieldErrors.wakeUp = this.wakeUp ? "Not a valid moment" : "Required";
+		if(isNaN(this.preSleep.getTime())) {
+			fieldErrors.sleep = "Not a valid date";
+		}
+		if(isNaN(this.preSleep.getTime())) {
+			fieldErrors.wakeUp = "Not a valid date";
 		}
 
 		return fieldErrors;
 	}
+}
 
-	format() {
-		return {
-			id: this.id,
-			preSleep: this.preSleep.format(),
-			sleep: this.preSleep.format(),
-			wakeUp: this.preSleep.format() 
-		}
-	}
-
-	parse() {
-		return {
-			preSleep: this.preSleep.toDate(),
-			sleep: this.preSleep.toDate(),
-			wakeUp: this.preSleep.toDate() 
-		}
-	}
-
-	save() {
-		return new Promise((resolve, reject) => {
-			if(!this.isValid()) {
-				reject({
-					status: 400,
-					message: {
-						fieldErrors: this.getFieldErrors()
-					}
-				});
-			} else {
-				resolve(this.parse());
-			}
-
-		}).then(model => {
-			const entity = {
-				key: getKey(this.id),
-				data: model
-			};
-
-			return ds.upsert(entity).then(response => new SleepModel(response[0][0]));
-    	});
-	}
-});
-
-module.exports = SleepModel;
+module.exports = SleepModelFactory;
