@@ -1,5 +1,6 @@
 import React, { Component, PropTypes } from 'react';
 import LazyLoad from 'react-lazy-load';
+import MediaQuery from 'react-responsive';
 
 import { connect } from 'react-redux';
 import Moment from 'frozen-moment';
@@ -38,7 +39,7 @@ class EventLog extends Component {
 
 		return (
 			<div>
-				<PageHeader pageTitle="Sleep log"/>
+				<PageHeader pageTitle="Log"/>
 				<Card style={infoBoxOuterStyle}>
 			        <CardText style={{paddingBottom:6}}>
 			        	<div style={infoBoxInnerStyle}>

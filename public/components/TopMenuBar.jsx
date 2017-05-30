@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import MediaQuery from 'react-responsive';
+
+import { grey50 } from 'material-ui/styles/colors';
 
 import AppBar from 'material-ui/AppBar';
-
 import FlatButton from 'material-ui/FlatButton';
 import IconMenu from 'material-ui/IconMenu';
 import IconButton from 'material-ui/IconButton';
@@ -50,16 +52,24 @@ class UserMenu extends React.Component {
    		return (
       		<div>
 				<IconMenu
-		          iconButtonElement={<IconButton style={{height:42}}></IconButton>}
-		          open={this.state.openUserMenu}
-		          onRequestChange={this.handleOnUserMenuRequestChange}>
+		          iconButtonElement={
+			          	<IconButton onTouchTap={this.handleOpenUserMenu} style={{height:42}}>
+			          		<MediaQuery query='(max-device-width: 800px)'>
+			          			<IconUser color={grey50}/>
+			          		</MediaQuery> 
+			          	</IconButton>
+			          }
+			          open={this.state.openUserMenu}
+			          onRequestChange={this.handleOnUserMenuRequestChange}>
 		          	<MenuItem onTouchTap={() => this.handleOnLogout()} primaryText="Logout" />
 		          	<MenuItem primaryText="Change password" />
 		        </IconMenu>
-		        <FlatButton
-		        	style={{color:'#fff'}}
-		        	icon={<IconUser/>}
-		        	onTouchTap={this.handleOpenUserMenu} label={session.username} />
+		        <MediaQuery query='(min-device-width: 800px)'>
+		        	<FlatButton
+			        	style={{color:'#fff'}}
+			        	icon={<IconUser/>}
+			        	onTouchTap={this.handleOpenUserMenu} label={session.username} />
+			    </MediaQuery>
 	  		</div>
 		);
 	}

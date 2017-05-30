@@ -1,6 +1,7 @@
 import React, { Component, PropTypes } from 'react';
 import { connect } from 'react-redux'
 import { Link } from 'react-router-dom';
+import MediaQuery from 'react-responsive';
 import Moment from 'frozen-moment';
 
 import {Toolbar, ToolbarGroup, ToolbarTitle} from 'material-ui/Toolbar';
@@ -98,27 +99,44 @@ class PageHeader extends Component {
 
 		return (
 			<div>
-				<Toolbar>
+				<Toolbar style={{paddingRight:12}}>
 					<ToolbarGroup>
 	          			<ToolbarTitle text={pageTitle} />
 					</ToolbarGroup>
 					<ToolbarGroup>
-						<IconMenu iconButtonElement={<IconButton></IconButton>} open={this.state.openMenu} onChange={this.handleFilterChange}>
+						<IconMenu iconButtonElement={
+								<IconButton onTouchTap={this.handleOpenFilterMenu}>
+									<MediaQuery query='(max-device-width: 800px)'>
+										<IconFilter/>
+									</MediaQuery> 
+								</IconButton>
+							}
+							open={this.state.openMenu}
+							onChange={this.handleFilterChange}>
           					<MenuItem value={'week'} primaryText="Last week" />
          					<MenuItem value={'month'} primaryText="Last month" />
           					<MenuItem value={'year'} primaryText="Last year" />
           					<MenuItem value={'custom'} primaryText="Custom" />
           					<MenuItem value={'all'} primaryText="All" />
 			        	</IconMenu>
-			        	<RaisedButton
-			        		icon={<IconFilter/>}
-			        		onTouchTap={this.handleOpenFilterMenu}
-			        		label={filterLabel} />
+			        	<MediaQuery query='(min-device-width: 800px)'>
+				        	<RaisedButton
+				        		icon={<IconFilter/>}
+				        		onTouchTap={this.handleOpenFilterMenu}
+				        		label={filterLabel} />
+			        	</MediaQuery> 
 						<Link to={{pathname: '/add', state: { modal: true }}}>
-							<RaisedButton
-						      label="New sleep event"
-						      primary={true}
-						      icon={<IconAdd />}/>
+							<MediaQuery query='(min-device-width: 800px)'>
+								<RaisedButton
+							      label="New sleep event"
+							      primary={true}
+							      icon={<IconAdd />}/>
+						    </MediaQuery>
+						    <MediaQuery query='(max-device-width: 800px)'>
+						    	<IconButton>
+						    		<IconAdd />
+						    	</IconButton>
+						    </MediaQuery> 
 						</Link>
 					</ToolbarGroup>
 				</Toolbar>

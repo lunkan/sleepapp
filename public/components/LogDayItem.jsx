@@ -1,4 +1,5 @@
 import React, { Component, PropTypes } from 'react';
+import MediaQuery from 'react-responsive';
 import Moment from 'frozen-moment';
 
 import {
@@ -77,6 +78,19 @@ const PresleepChip = (props) => {
 	);
 };
 
+const PresleepAvatar = (props) => {
+	const { sleepData } = props;
+	const preSleep = sleepData.filter(e => e.type === 'sleep').reduce((acc, e) => acc + e.preDuration, 0);
+
+	if(preSleep < 30 * MS_PER_MINUTE) {
+		return null;
+	}
+
+	return (
+		<Avatar size={18} color={pink200} backgroundColor={deepOrange900} style={{display: 'flex'}} icon={<IconFussy />} />
+	);
+};
+
 const Summary = (props) => {
 	const { sleepData } = props;
 
@@ -86,10 +100,12 @@ const Summary = (props) => {
 
 	return (
 		<div style={styleSummary}>
-			<Chip className="chip-small" backgroundColor={grey100}>
-				<Avatar color={grey300} backgroundColor={blueGrey900} icon={<IconTime />} />
-				{durationHours}
-			</Chip>
+			<MediaQuery query='(min-device-width: 800px)'>
+				<Chip className="chip-small" backgroundColor={grey100}>
+					<Avatar color={grey300} backgroundColor={blueGrey900} icon={<IconTime />} />
+					{durationHours}
+				</Chip>
+			</MediaQuery>
 			<Chip className="chip-small" backgroundColor={grey100}>
 				<Avatar color={blue300} backgroundColor={indigo900} icon={<IconNight />} />
 				{humanizeDuration(nightSleepDuration, true)}
@@ -98,7 +114,12 @@ const Summary = (props) => {
 				<Avatar color={yellow300} backgroundColor={amber700} icon={<IconDay />} />
 				{humanizeDuration(daySleepDuration, true)}
 			</Chip>
-			<PresleepChip sleepData={sleepData}/>
+			<MediaQuery query='(min-device-width: 800px)'>
+				<PresleepChip sleepData={sleepData}/>
+			</MediaQuery>
+			<MediaQuery query='(max-device-width: 800px)'>
+				<PresleepAvatar sleepData={sleepData}/>
+			</MediaQuery>
 		</div>
 	);
 };
@@ -183,7 +204,6 @@ export default class LogDayItem extends Component {
 		const { open, sleepData } = this.state;
 
 		const firstMoment = sleepData.first().begins.format('MMM D HH:mm');
-		const lastMoment = sleepData.last().ends.format('MMM D HH:mm');
 		const nestedItems = open ? sleepData.map(o => <LogSleepItem key={o.id} sleepData={o}/>) : [];
 
 		return (
@@ -191,7 +211,7 @@ export default class LogDayItem extends Component {
 				<div style={styleHeader} onClick={this.handleToggleExpand} >
 					<DayBadge dateString={key}/>
 					<div style={styleHeaderInfo}>
-			  			<div>{`${firstMoment} - ${lastMoment}`}</div>
+			  			<div>{firstMoment}</div>
 			  			<Summary sleepData={sleepData}/>
 		  			</div>
 		  			{ open ? <IconUpArrow style={styleDropMenuIcon}/> : <IconDownArrow style={styleDropMenuIcon}/> }

@@ -7,6 +7,7 @@ import { fetchSession } from './actions/actions';
 import TopMenuBar from './components/TopMenuBar.jsx';
 import BottomMenuBar from './components/BottomMenuBar.jsx';
 
+import Home from './components/Home.jsx';
 import Log from './components/List.jsx';
 import Login from './components/Login.jsx';
 import Graph from './components/Overview.jsx';
@@ -84,7 +85,7 @@ class App extends React.Component {
 		    	<TopMenuBar style={styleTopMenuBar} />
 		    	<div style={styleMainContainer}>
 		    		<Switch location={isModal ? this.previousLocation : location}>
-		    			<Route exact path="/" component={session.isAuthenticated ? Graph : Login}/>
+		    			<Route exact path="/" component={session.isAuthenticated ? Home : Login}/>
 						<Route path='/login' component={Login} />
 				  		<PrivateRoute path="/graph" component={Graph}/>
 				  		<PrivateRoute path="/list" component={Log}/>
